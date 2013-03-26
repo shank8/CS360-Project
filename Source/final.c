@@ -2,8 +2,8 @@
 
 
 
-int main(int argc, char * argv[], char * env[]){
-	
+int main(int argc, char * argv[], char * env[])
+{
 	// DEVICE SELECT
 	get_device();
 
@@ -11,7 +11,8 @@ int main(int argc, char * argv[], char * env[]){
 	mount_root();
 
 	// PROCESS LOOP
-
+	
+	
 	return 0;
 }
 

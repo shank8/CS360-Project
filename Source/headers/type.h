@@ -1,11 +1,12 @@
-/*	type.h for CS360 Project             */
-
+/*  type.h for CS360 Project  */
+#include <stdlib.h>
 #include <stdio.h>
 #include <fcntl.h>
-#include <ext2fs/ext2_fs.h>
+#include "ext2_fs.h"
 #include <libgen.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
 // define shorter TYPES, save typing efforts
 typedef struct ext2_group_desc  GD;
@@ -13,10 +14,6 @@ typedef struct ext2_super_block SUPER;
 typedef struct ext2_inode       INODE;
 typedef struct ext2_dir_entry_2 DIR;    // need this for new version of e2fs
 
-GD    *gp;
-SUPER *sp;
-INODE *ip;
-DIR   *dp; 
 
 #define BLOCK_SIZE        1024
 #define BITS_PER_BLOCK    (8*BLOCK_SIZE)
@@ -68,7 +65,7 @@ typedef struct Proc{
   struct Minode *cwd;
   OFT   *fd[NFD];
 } PROC;
-      
+
 // In-memory inodes structure
 typedef struct Minode{		
   INODE    INODE;               // disk inode
@@ -91,8 +88,38 @@ typedef struct Mount{
         char   mount_name[64];
 } MOUNT;
 
+
+// Declare externals
+extern GD    *gp;
+extern SUPER *sp;
+extern INODE *ip;
+extern DIR   *dp;
+extern MINODE minode[100];	//<=== 100 minodes; refCount=0 means FREE
+extern MINODE *root;	//====>   from here on, / means minode[0].
+extern char device[64], pathname[128];
+extern char block[BLOCK_SIZE], datablock[BLOCK_SIZE];
+extern char name[128][128];
+
+extern int fd, n;	// file descriptor, number of names in path
+
+extern SUPER *sb;
+extern GD    *gb;
+extern INODE *ip, *cwd;
+extern DIR   *dp;
+extern char *cp;
+extern __u32 iNodeBeginBlock;
+
 // All function declaractions will be here
 
 void get_device();
+int get_block(int blockNumber);
+void put_block(int blockNumber);
+void token_path(char *pathname);
+unsigned long getino(int *dev, char *pathname);
+unsigned long search(MINODE *mip, char *name);
+MINODE *iget(int dev, unsigned long ino);
+void iput(MINODE *mip);
+int findmyname(MINODE *parent, unsigned long myino, char *myname);
+int findino(MINODE *mip, unsigned long *myino, unsigned long *parentino);
 void mount_root();
 void printInode(INODE * ip);
