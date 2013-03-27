@@ -41,8 +41,9 @@ void token_path(char *pathname)
 
 unsigned long getino(int *dev, char *pathname)
 {
-
-	// I DO NOT KNOW WHAT int * dev is ???
+	// Q: I DO NOT KNOW WHAT int * dev is ???
+	// A: it has to do with what device we are working with
+	//    (for Tier III we will have to specify which device)
 
 	char * tok;
 	unsigned long inumber = 0;
@@ -52,11 +53,13 @@ unsigned long getino(int *dev, char *pathname)
 
 	tok = strtok(pathname, "/");
 
-	while(tok != NULL){
+	while(tok != NULL)
+	{
 		printf("tok: %s\n", tok);
 		inumber = isearch(next, tok);
 
-		if(inumber == 0){
+		if(inumber == 0)
+		{
 			printf("Path cannot be found\n");
 			return inumber;
 		}
@@ -84,6 +87,29 @@ unsigned long search(MINODE *mip, char *name)
 MINODE *iget(int dev, unsigned long ino)
 {
 	MINODE *tmpMINode;
+	//////// TODO: do we need to do this chunk? ////////
+	INODE * tmpInode = (INODE *)ino;
+	// or do we need to read in from a block
+	////////////////////////////////////////////////////
+	int i;
+	int freeINode = -1; // location of first free MINODE
+	
+	for (i = 0; i < 100; i++)
+	{
+		if (&minode[i] != NULL)
+		{
+			if (&(minode[i].INODE) == tmpInode)
+			{
+				minode[i].refCount++;
+				return &minode[i];
+			}
+		}
+		else if (freeINode == -1)
+			freeINode = i;
+	}
+	
+	tmpMINode = new_MINODE(ino, freeINode, dev);
+	
 //  Once you have the (dev, ino) of an inode, you may load the inode into a slot
 //  in the Minode[] array. To ensure uniqueness, you must search the Minode[] 
 //  array to see whether the needed INODE is already loaded.
@@ -100,25 +126,36 @@ MINODE *iget(int dev, unsigned long ino)
 
 void iput(MINODE *mip)
 {
+	// can we just remove the next line and have the following as: if (--mip->refCount == 0)
+	--mip->refCount;
+	if ((mip->refCount > 0) || (mip->dirty == 0))
+		return;
+	// refCount is 0 and dirty is 1 ==> write the block to disk
+	
+	// TODO: write the block to disk
+	
+	
+///////////////////////////////////////////////////////////////////////////////
 //  This function releases a Minode[]. Since an Minode[]'s refCount indicates
 //  the number of users on this Minode[], releasing is done as follows:
 //    First, dec the refCount by 1. If (after dec) refCount > 0 ==> return;
 //    else:
 //      if Minode[].dirty == 0 ==> no need to write back, so return;
 //      Otherwise, (dirty==1) ==> must write the INODE back to disk.
-   
+//
 //  To write an INODE back to disk:
 //     Use Minode's (dev, ino) to determine which dev and which INODE on disk,
 //  i.e. which disk block and which inode in that block.
 //  Read that block in, copy Minode's INODE into the INODE area in that block
 //  and write the block back to disk.
+////////////////////////////////////////////////////////////////////////////////
 	
 	return;
 }
 
 int findmyname(MINODE *parent, unsigned long myino, char *myname)
 {
-	int result;
+	int result = -1;
 //   Given the parent DIR (MINODE pointer) and my inumber, this function finds 
 //   the name string of myino in the parent's data block. This is similar to 
 //   SERACH() mentioned above.
@@ -128,54 +165,52 @@ int findmyname(MINODE *parent, unsigned long myino, char *myname)
 
 int findino(MINODE *mip, unsigned long *myino, unsigned long *parentino)
 {
-	int result;
+	int result = -1;
 //  For a DIR Minode, extract the inumbers of . and .. 
 //  Read in 0th data block. The inumbers are in the first two dir entries.
 	
 	return result;
 }
 
-
-
-unsigned long isearch(INODE * inode, char * name){
-
-	int i = 0, k = 0;
+unsigned long isearch(INODE * inode, char * name)
+{
+	int i = 0, k = 0; // do we need the variable k?
 	char dpname[256];
 	int result = 0;
 
-	while(i < 12){
+	while(i < 12)
+	{
 		lseek(fd, inode->i_block[i] * BLOCK_SIZE, 0);
 		read(fd, datablock, BLOCK_SIZE);
 
 		dp = (DIR *)datablock;
 		cp = datablock;
 
-		while(cp < datablock + BLOCK_SIZE && dp->rec_len != 0){
+		while(cp < datablock + BLOCK_SIZE && dp->rec_len != 0)
+		{
 			k = 0;
-			
+
 			dp->name[dp->name_len] = '\0';
 
 			strcpy(dpname, dp->name);
 
 			printf("Search: %s\nName: %s\n\n", name, dpname);
-           if (strcmp(name, dpname)==0)
-           {
+			if (strcmp(name, dpname)==0)
+			{
+				result = dp->inode;
+			}
 
-              result = dp->inode;
-           }
-          
-           cp += dp->rec_len;         // advance cp by rlen in bytes
-           dp = (DIR *)cp;       // pull dp to the next record
+			cp += dp->rec_len;         // advance cp by rlen in bytes
+			dp = (DIR *)cp;       // pull dp to the next record
         }
 
         i++;
-
 	}
 	return result;
 }
 
-INODE * findInode(int inumber){
-
+INODE * findInode(int inumber)
+{
 	int nblock, num;
 	INODE * ino = NULL;
 
@@ -184,11 +219,10 @@ INODE * findInode(int inumber){
 
 	lseek(fd, nblock*(long)BLOCK_SIZE, 0);
 
-	if(read(fd, block, BLOCK_SIZE) > 0){
+	if(read(fd, block, BLOCK_SIZE) > 0)
 		ino = (INODE *)(&block[num*128]);
-	}else{
+	else
 		printf("Error reading inode block\n");
-	}
 
 	return ino;
 }

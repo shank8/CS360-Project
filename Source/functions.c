@@ -17,6 +17,24 @@ char *cp;
 
 __u32 iNodeBeginBlock;
 
+MINODE *new_MINODE(unsigned long ino, int minodeLoc, int dev)
+{
+	//minode[minodeLoc] = malloc(sizeof(struct MINODE *));
+	
+	// TODO: read INODE from the disk and store it
+	//minode[minodeLoc].INODE = ??;
+	
+	minode[minodeLoc].dev = dev;
+	minode[minodeLoc].ino = ino;
+	minode[minodeLoc].refCount = 1; // need to verify this is correct number to set as
+	minode[minodeLoc].dirty = 0;
+	minode[minodeLoc].mounted = 0;
+	minode[minodeLoc].mountptr = NULL;
+	strcpy(minode[minodeLoc].name, "tmpName");
+	
+	return &minode[minodeLoc];
+}
+
 void get_device()
 {
 	printf("Please input a device to mount: ");
@@ -92,7 +110,8 @@ void mount_root()
 
 	// Open device for read
 	fd = open(device, O_RDONLY);
-	if(fd < 0){
+	if(fd < 0)
+	{
 		printf("Error opening device...\n");
 		return;
 	}
@@ -132,11 +151,8 @@ void mount_root()
 	// Now seek to iNodeBeginBlock
 
 	get_block(iNodeBeginBlock);
-	
 	cwd = ip = (INODE *)(block)+1;
-
 	printInode(cwd);
-
 	printf("WE GOT ROOT MAN!!!\n");
 	
 	return;
@@ -146,14 +162,15 @@ void printInode(INODE * ip)
 {
 	int k;
 
-  printf("Mode: %u\n", ip->i_mode);
-  printf("UID: %u\n", ip->i_uid);
-  printf("Size: %u\n", ip->i_size);
-  
-  for(k = 0; k<12;k++){
-	 printf("Block[%d]: %u\n", k, ip->i_block[k]);
+	printf("Mode: %u\n", ip->i_mode);
+	printf("UID: %u\n", ip->i_uid);
+	printf("Size: %u\n", ip->i_size);
+
+	for(k = 0; k<12;k++)
+	{
+		printf("Block[%d]: %u\n", k, ip->i_block[k]);
 	}
-  printf("\n");
-  
-  return;
+	printf("\n");
+
+	return;
 }
