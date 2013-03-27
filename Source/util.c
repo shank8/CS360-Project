@@ -41,33 +41,44 @@ void token_path(char *pathname)
 
 unsigned long getino(int *dev, char *pathname)
 {
-	unsigned long result;
-//  This is the most important function of the project. It converts
-//  a pathname, such as /a/b/c/d OR x/y/z, into its (dev, inumber), i.e. 
-//  the returned value is its inumber and dev is its dev number.
-//
-//  NOTE: while traversing a pathname, the starting dev number is the dev of / 
-//  OR the dev of (running's) CWD. If you have only one device, the dev number 
-//  will not change. But when crossing MOUNTed file systems (for Level-3), the
-//  dev number may change. The dev parameter is used to keep the CURRENT dev 
-//  number.
-//
-//  This function depends on search(), which searches an DIR's data block for 
-//  a component name, and returns the component's inmuber. Modify *dev if the
-//  dev number changes.
-//  
-//  You have already done these in showblock.c
-	
-	return result;
+
+	// I DO NOT KNOW WHAT int * dev is ???
+
+	char * tok;
+	unsigned long inumber = 0;
+	INODE * next = ip;
+
+	printf("Pathname: %s\n", pathname);
+
+	tok = strtok(pathname, "/");
+
+	while(tok != NULL){
+		printf("tok: %s\n", tok);
+		inumber = isearch(next, tok);
+
+		if(inumber == 0){
+			printf("Path cannot be found\n");
+			return inumber;
+		}
+
+		next = findInode(inumber);
+		printf("Path found!\n");
+		tok = strtok(NULL, "/");
+	}
+
+	printf("Search done\n");
+
+	return inumber;
 }
 
 unsigned long search(MINODE *mip, char *name)
 {
-	unsigned long result;
+	unsigned long inumber = 0;
 //   This function searches the data blocks of a DIR inode (inside an Minode[])
 //   for name. You may assume DIRECT data blocks only.
-	
-	return result;
+	inumber = isearch(&mip->INODE, name);
+
+	return inumber;
 }
 
 MINODE *iget(int dev, unsigned long ino)
@@ -122,4 +133,62 @@ int findino(MINODE *mip, unsigned long *myino, unsigned long *parentino)
 //  Read in 0th data block. The inumbers are in the first two dir entries.
 	
 	return result;
+}
+
+
+
+unsigned long isearch(INODE * inode, char * name){
+
+	int i = 0, k = 0;
+	char dpname[256];
+	int result = 0;
+
+	while(i < 12){
+		lseek(fd, inode->i_block[i] * BLOCK_SIZE, 0);
+		read(fd, datablock, BLOCK_SIZE);
+
+		dp = (DIR *)datablock;
+		cp = datablock;
+
+		while(cp < datablock + BLOCK_SIZE && dp->rec_len != 0){
+			k = 0;
+			
+			dp->name[dp->name_len] = '\0';
+
+			strcpy(dpname, dp->name);
+
+			printf("Search: %s\nName: %s\n\n", name, dpname);
+           if (strcmp(name, dpname)==0)
+           {
+
+              result = dp->inode;
+           }
+          
+           cp += dp->rec_len;         // advance cp by rlen in bytes
+           dp = (DIR *)cp;       // pull dp to the next record
+        }
+
+        i++;
+
+	}
+	return result;
+}
+
+INODE * findInode(int inumber){
+
+	int nblock, num;
+	INODE * ino = NULL;
+
+	nblock = iNodeBeginBlock + ((inumber - 1) / 8);
+	num = ((inumber-1) % 8);
+
+	lseek(fd, nblock*(long)BLOCK_SIZE, 0);
+
+	if(read(fd, block, BLOCK_SIZE) > 0){
+		ino = (INODE *)(&block[num*128]);
+	}else{
+		printf("Error reading inode block\n");
+	}
+
+	return ino;
 }

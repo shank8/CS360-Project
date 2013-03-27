@@ -117,9 +117,13 @@ void put_block(int blockNumber);
 void token_path(char *pathname);
 unsigned long getino(int *dev, char *pathname);
 unsigned long search(MINODE *mip, char *name);
+unsigned long isearch(INODE *inode, char *name);
+
 MINODE *iget(int dev, unsigned long ino);
 void iput(MINODE *mip);
 int findmyname(MINODE *parent, unsigned long myino, char *myname);
 int findino(MINODE *mip, unsigned long *myino, unsigned long *parentino);
 void mount_root();
 void printInode(INODE * ip);
+
+INODE * findInode(int inumber);

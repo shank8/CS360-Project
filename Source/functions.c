@@ -1,11 +1,8 @@
 #include "headers/type.h"
 
-GD    *gp;
-SUPER *sp;
-INODE *ip;
-DIR   *dp;
 MINODE minode[100];	//<=== 100 minodes; refCount=0 means FREE
 MINODE *root;	//====>   from here on, / means minode[0].
+
 char device[64], pathname[128];
 char block[BLOCK_SIZE], datablock[BLOCK_SIZE];
 char name[128][128];
@@ -17,14 +14,13 @@ GD    *gb;
 INODE *ip, *cwd;
 DIR   *dp;
 char *cp;
+
 __u32 iNodeBeginBlock;
 
 void get_device()
 {
 	printf("Please input a device to mount: ");
-	fgets(device, 64, stdin);
-	device[strlen(device)-1] = '\0';
-	
+	gets(device);
 	return;
 }
 
@@ -107,7 +103,7 @@ void mount_root()
 
 	// Get superblock
 //	read(fd, block, BLOCK_SIZE);
-	get_block(1);
+	get_block(SUPERBLOCK);
 	// block is now superblock
 
 	sb = (SUPER *)&block[0];
@@ -134,8 +130,7 @@ void mount_root()
 	printf("Begin Block: %d\n", iNodeBeginBlock);
 
 	// Now seek to iNodeBeginBlock
-//	lseek(fd, BLOCK_SIZE*iNodeBeginBlock, 0);
-//	read(fd, block, BLOCK_SIZE);
+
 	get_block(iNodeBeginBlock);
 	
 	cwd = ip = (INODE *)(block)+1;
