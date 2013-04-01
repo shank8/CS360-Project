@@ -84,35 +84,6 @@ unsigned long search(MINODE *mip, char *name)
 	return inumber;
 }
 
-MINODE *iget(int dev, unsigned long ino)
-{
-	MINODE *tmpMINode;
-	//////// TODO: do we need to do this chunk? ////////
-	// INODE * tmpInode = (INODE *)ino;
-	// or do we need to read in from a block
-	////////////////////////////////////////////////////
-
-	// unsigned long ino is the inumber of the inode, not an address
-
-	int i;
-	int freeINode = -1; // location of first free MINODE
-	
-	for (i = 0; i < 100; i++)
-	{
-		if (&minode[i] != NULL)
-		{
-			if (&(minode[i].INODE) == findInode(ino))
-			{
-				minode[i].refCount++;
-				return &minode[i];
-			}
-		}
-		else if (freeINode == -1)
-			freeINode = i;
-	}
-	
-	tmpMINode = new_MINODE(ino, freeINode, dev);
-	
 //  Once you have the (dev, ino) of an inode, you may load the inode into a slot
 //  in the Minode[] array. To ensure uniqueness, you must search the Minode[] 
 //  array to see whether the needed INODE is already loaded.
@@ -123,6 +94,30 @@ MINODE *iget(int dev, unsigned long ino)
 //  If you do not find it in memory, you must allocate a FREE Minode[i], load
 //  the INODE from disk into that Minode[i].INODE, initialize the Minode[]'s
 //  other fields and return its address as a MINODE pointer,
+MINODE *iget(int dev, unsigned long ino)
+{
+	MINODE *tmpMINode;
+	get_block(ino); // should read the inode into "block"
+	INODE *tmpInode = (INODE *)block;
+	
+	int i;
+	int freeINode = -1; // location of first free MINODE
+	
+	for (i = 0; i < 100; i++)
+	{
+		if (&minode[i] != NULL)
+		{
+			if (&(minode[i].INODE) == tmpInode)
+			{
+				minode[i].refCount++;
+				return &minode[i];
+			}
+		}
+		else if (freeINode == -1)
+			freeINode = i;
+	}
+	
+	tmpMINode = new_MINODE(tmpInode, ino, freeINode, dev);
 
 	return tmpMINode;
 }
@@ -134,12 +129,18 @@ void iput(MINODE *mip)
 	INODE * inode = NULL;
 
 	--mip->refCount;
-	if ((mip->refCount > 0) || (mip->dirty == 0))
+	if (mip->refCount > 0)
+		return;
+	else if (mip->dirty == 0)
 		return;
 	// refCount is 0 and dirty is 1 ==> write the block to disk
 	
 	// TODO: write the block to disk
-	// Get device number if needed
+	if (mip->dev != root->dev)	// currently loaded device is different
+	{							// than the one we want to write to
+		//TODO: Read in from the device that we need to write to
+	}
+//  else: currently loaded device is the device we're writing to
 
 	// Get inode number and address of inode
 	ino = mip->ino;
