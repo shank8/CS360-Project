@@ -88,9 +88,12 @@ MINODE *iget(int dev, unsigned long ino)
 {
 	MINODE *tmpMINode;
 	//////// TODO: do we need to do this chunk? ////////
-	INODE * tmpInode = (INODE *)ino;
+	// INODE * tmpInode = (INODE *)ino;
 	// or do we need to read in from a block
 	////////////////////////////////////////////////////
+
+	// unsigned long ino is the inumber of the inode, not an address
+
 	int i;
 	int freeINode = -1; // location of first free MINODE
 	
@@ -98,7 +101,7 @@ MINODE *iget(int dev, unsigned long ino)
 	{
 		if (&minode[i] != NULL)
 		{
-			if (&(minode[i].INODE) == tmpInode)
+			if (&(minode[i].INODE) == findInode(ino))
 			{
 				minode[i].refCount++;
 				return &minode[i];
@@ -127,14 +130,24 @@ MINODE *iget(int dev, unsigned long ino)
 void iput(MINODE *mip)
 {
 	// can we just remove the next line and have the following as: if (--mip->refCount == 0)
+	int dev = 0, ino;
+	INODE * inode = NULL;
+
 	--mip->refCount;
 	if ((mip->refCount > 0) || (mip->dirty == 0))
 		return;
 	// refCount is 0 and dirty is 1 ==> write the block to disk
 	
 	// TODO: write the block to disk
-	
-	
+	// Get device number if needed
+
+	// Get inode number and address of inode
+	ino = mip->ino;
+	inode = findInode(ino);
+
+	// Copy the contents of the MINODE into the location in disk
+	memcpy(inode, &mip->INODE, sizeof(INODE));
+
 ///////////////////////////////////////////////////////////////////////////////
 //  This function releases a Minode[]. Since an Minode[]'s refCount indicates
 //  the number of users on this Minode[], releasing is done as follows:
