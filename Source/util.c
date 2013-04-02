@@ -169,7 +169,6 @@ void iput(MINODE *mip)
 
 int findmyname(MINODE *parent, unsigned long myino, char *myname)
 {
-	int result = 0;
 //   Given the parent DIR (MINODE pointer) and my inumber, this function finds 
 //   the name string of myino in the parent's data block. This is similar to 
 //   SERACH() mentioned above.
@@ -198,11 +197,11 @@ int findmyname(MINODE *parent, unsigned long myino, char *myname)
 
 			strcpy(dpname, dp->name);
 
-			printf("Search: %s\nName: %s\n\n", name, dpname);
+			printf("Search: %s\nName: %s\n\n", (char *)name, (char *)dpname);
 			if (myino == dp->inode) // Found inode
 			{
 				result = 1;
-				myname = &dp->name;
+				myname = (char*)(&dp->name);
 			}
 
 			cp += dp->rec_len;         // advance cp by rlen in bytes
@@ -217,21 +216,21 @@ int findmyname(MINODE *parent, unsigned long myino, char *myname)
 int findino(MINODE *mip, unsigned long *myino, unsigned long *parentino)
 {
 	int result = 0;
+	char dpname[256];
 //  For a DIR Minode, extract the inumbers of . and .. 
 //  Read in 0th data block. The inumbers are in the first two dir entries.
-	get_block(mip->INODE.i_blocks[0]);
+	get_block(mip->INODE.i_block[0]);
 	dp = (DIR *)datablock;
 	cp = datablock;
 
 	while(cp < datablock + BLOCK_SIZE && dp->rec_len != 0)
 		{
-			k = 0;
 
 			dp->name[dp->name_len] = '\0';
 
 			strcpy(dpname, dp->name);
 
-			printf("Search: %s\nName: %s\n\n", name, dpname);
+			printf("Search: %s\nName: %s\n\n", (char*)name, (char *)dpname);
 
 			if (strcmp(".", dpname)==0) // Set myino to dp->inode
 			{
@@ -251,7 +250,7 @@ int findino(MINODE *mip, unsigned long *myino, unsigned long *parentino)
 
 unsigned long isearch(INODE * inode, char * name)
 {
-	int i = 0, k = 0; // do we need the variable k?
+	int i = 0;
 	char dpname[256];
 	int result = 0;
 
@@ -265,7 +264,6 @@ unsigned long isearch(INODE * inode, char * name)
 
 		while(cp < datablock + BLOCK_SIZE && dp->rec_len != 0)
 		{
-			k = 0;
 
 			dp->name[dp->name_len] = '\0';
 

@@ -111,7 +111,7 @@ extern __u32 iNodeBeginBlock;
 
 // All function declaractions will be here
 
-MINODE *new_MINODE(unsigned long ino, int minodeLoc, int dev);
+MINODE *new_MINODE(INODE * inode, unsigned long ino, int minodeLoc, int dev);
 void get_device();
 void init();
 int get_block(int blockNumber);
