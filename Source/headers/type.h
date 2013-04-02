@@ -113,6 +113,7 @@ extern __u32 iNodeBeginBlock;
 
 MINODE *new_MINODE(unsigned long ino, int minodeLoc, int dev);
 void get_device();
+void init();
 int get_block(int blockNumber);
 void put_block(int blockNumber);
 void token_path(char *pathname);

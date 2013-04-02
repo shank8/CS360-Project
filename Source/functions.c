@@ -15,18 +15,24 @@ INODE *ip, *cwd;
 DIR   *dp;
 char *cp;
 
+PROC proc[2];
+
+int dev = 0; // 0 is main device
+
 __u32 iNodeBeginBlock;
 
-MINODE *new_MINODE(unsigned long ino, int minodeLoc, int dev)
+MINODE *new_MINODE(INODE * inode, unsigned long ino, int minodeLoc, int dev)
 {
 	//minode[minodeLoc] = malloc(sizeof(struct MINODE *));
 	
 	// TODO: read INODE from the disk and store it
 	//minode[minodeLoc].INODE = ??;
 	
+	memcpy(&(minode[minodeLoc].INODE), inode, sizeof(INODE)); // This should copy the inode
+
 	minode[minodeLoc].dev = dev;
 	minode[minodeLoc].ino = ino;
-	minode[minodeLoc].refCount = 1; // need to verify this is correct number to set as
+	minode[minodeLoc].refCount = 1;
 	minode[minodeLoc].dirty = 0;
 	minode[minodeLoc].mounted = 0;
 	minode[minodeLoc].mountptr = NULL;
@@ -77,6 +83,47 @@ void get_device()
 //                      | nblocks      |            |
 //                      | ninodes      |            |
 //                      ---------------------------------  
+void init(){
+
+	/*
+	typedef struct Proc{
+	  int   uid;
+	  int   pid;
+	  int   gid;
+	  int   ppid;
+	  struct Proc *parent;
+	  int   status;
+
+	  struct Minode *cwd;
+	  OFT   *fd[NFD];
+	} PROC;
+	*/
+	int i = 0;
+
+	// INIT SUPERUSER Process
+	proc[0].uid = 0;
+	proc[0].pid = 0;
+	proc[0].gid = 0;
+	proc[0].ppid = 0;
+	proc[0].cwd = NULL;
+
+	// INIT REG USER Process
+	proc[1].uid = 1;
+	proc[1].pid = 0;
+	proc[1].gid = 0;
+	proc[1].ppid = 0;
+	proc[1].cwd = NULL;
+
+	// INIT MINODES
+	for(i=0;i<100;i++){
+		minode[i].refCount = 0;
+	}
+
+	// INIT root
+	root = NULL;
+
+	return;
+}
 
 void mount_root()
 {
@@ -138,6 +185,10 @@ void mount_root()
 		printf("%s is not an ext2 FS device.\nExiting.\n", device);
 		exit(0);
 	}
+
+	root = iget(dev, ROOT_INODE); // Get the root inode from disk and put into minodes
+
+	proc[0].cwd = proc[1].cwd = root;
 
 	// Get group block
 	read(fd, block, BLOCK_SIZE);

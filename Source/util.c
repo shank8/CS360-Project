@@ -169,20 +169,83 @@ void iput(MINODE *mip)
 
 int findmyname(MINODE *parent, unsigned long myino, char *myname)
 {
-	int result = -1;
+	int result = 0;
 //   Given the parent DIR (MINODE pointer) and my inumber, this function finds 
 //   the name string of myino in the parent's data block. This is similar to 
 //   SERACH() mentioned above.
-	
+
+	// This is basically the search and isearch functions except in stead of finding a name and returning an inode
+	// we are searching for an inode and returning a name
+
+	int i = 0, k = 0; // do we need the variable k?
+	char dpname[256];
+	int result = 0;
+	INODE * inode = &(parent->INODE);
+
+	while(i < 12)
+	{
+		lseek(fd, inode->i_block[i] * BLOCK_SIZE, 0);
+		read(fd, datablock, BLOCK_SIZE);
+
+		dp = (DIR *)datablock;
+		cp = datablock;
+
+		while(cp < datablock + BLOCK_SIZE && dp->rec_len != 0)
+		{
+			k = 0;
+
+			dp->name[dp->name_len] = '\0';
+
+			strcpy(dpname, dp->name);
+
+			printf("Search: %s\nName: %s\n\n", name, dpname);
+			if (myino == dp->inode) // Found inode
+			{
+				result = 1;
+				myname = &dp->name;
+			}
+
+			cp += dp->rec_len;         // advance cp by rlen in bytes
+			dp = (DIR *)cp;       // pull dp to the next record
+        }
+
+        i++;
+	}
 	return result;
 }
 
 int findino(MINODE *mip, unsigned long *myino, unsigned long *parentino)
 {
-	int result = -1;
+	int result = 0;
 //  For a DIR Minode, extract the inumbers of . and .. 
 //  Read in 0th data block. The inumbers are in the first two dir entries.
-	
+	get_block(mip->INODE.i_blocks[0]);
+	dp = (DIR *)datablock;
+	cp = datablock;
+
+	while(cp < datablock + BLOCK_SIZE && dp->rec_len != 0)
+		{
+			k = 0;
+
+			dp->name[dp->name_len] = '\0';
+
+			strcpy(dpname, dp->name);
+
+			printf("Search: %s\nName: %s\n\n", name, dpname);
+
+			if (strcmp(".", dpname)==0) // Set myino to dp->inode
+			{
+				*myino = dp->inode;
+			}else if(strcmp("..", dpname)==0){
+				*parentino = dp->inode;
+				result = 1;
+				break;
+			}
+
+			cp += dp->rec_len;         // advance cp by rlen in bytes
+			dp = (DIR *)cp;       // pull dp to the next record
+        }
+
 	return result;
 }
 
