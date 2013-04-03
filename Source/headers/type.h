@@ -98,7 +98,7 @@ extern MINODE minode[NMINODES];	//<=== 100 minodes; refCount=0 means FREE
 extern MINODE *root;	//====>   from here on, / means minode[0].
 extern char device[64], pathname[128];
 extern char block[BLOCK_SIZE], datablock[BLOCK_SIZE];
-extern char name[128][128];
+char name [128][128];
 
 extern int fd, n;	// file descriptor, number of names in path
 
@@ -111,6 +111,7 @@ extern __u32 iNodeBeginBlock;
 
 // All function declaractions will be here
 
+// Utility
 MINODE *new_MINODE(INODE * inode, unsigned long ino, int minodeLoc, int dev);
 void get_device();
 void init();
@@ -120,13 +121,27 @@ void token_path(char *pathname);
 unsigned long getino(int *dev, char *pathname);
 unsigned long search(MINODE *mip, char *name);
 unsigned long isearch(INODE *inode, char *name);
+void parseString(char *input, char *command, char *pathname);
+int quit();
+int findCommand(char *command);
 
+// Functions
 MINODE *iget(int dev, unsigned long ino);
 void iput(MINODE *mip);
 int findmyname(MINODE *parent, unsigned long myino, char *myname);
 int findino(MINODE *mip, unsigned long *myino, unsigned long *parentino);
 void mount_root();
 void printInode(INODE * ip);
-int quit();
+
+// Cmds
+int _menu(char *pathname);
+int _ls(char *pathname);
+int _cd(char *pathname);
+int _mkdir(char *pathname);
+int _rmdir(char *pathname);
+int _pwd(char *pathname);
+int _creat0(char *pathname);
+int _rm(char *pathname);
+int __exit(char *pathname);
 
 INODE * findInode(int inumber);

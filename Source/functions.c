@@ -227,3 +227,4 @@ void printInode(INODE * ip)
 	printf("\n");
 	return;
 }
+
