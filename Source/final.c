@@ -14,10 +14,12 @@ int main(int argc, char * argv[], char * env[])
 	mount_root();
 
 	// PROCESS LOOP
-	while(1){
+	while(1)
+	{
 		break;
 	}
 	
+	quit();
 	return 0;
 }
 

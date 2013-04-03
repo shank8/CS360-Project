@@ -204,8 +204,12 @@ void mount_root()
 	
 	proc[SUPER_USER].cwd = proc[1].cwd = root;
 
+<<<<<<< HEAD
 getchar();
 	printInode(&root->INODE);
+=======
+	printInode(&(root->INODE));
+>>>>>>> 212151829c07d0e1561abf044e49975e733d9516
 
 	printf("WE GOT ROOT MAN!!!\n");
 	
@@ -225,6 +229,5 @@ void printInode(INODE * ip)
 		printf("Block[%d]: %u\n", k, ip->i_block[k]);
 	}
 	printf("\n");
-
 	return;
 }
