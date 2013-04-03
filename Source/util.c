@@ -111,21 +111,27 @@ MINODE *iget(int dev, unsigned long ino)
 	
 	for (i = 0; i < NMINODES; i++)
 	{
-<<<<<<< HEAD
-		if (&(minode[i].INODE) != NULL)
-=======
-		if (&minode[i].INODE != NULL)
->>>>>>> 212151829c07d0e1561abf044e49975e733d9516
-		{
-			printf("%d\n", i);
-			if (&(minode[i].INODE) == tmpInode)
+		// We have 2 cases, if the refCount is 0, we found an open spot; else find itself
+		if (minode[i].refCount == 0){
+
+			if (freeINode == -1) 
+				freeINode = i;
+
+		}else{
+
+			if (minode[i].ino == ino)
 			{
-				minode[i].refCount++;
-				return &minode[i];
+				printf("Found used MINODE[%d]\n", i);
+				
+					minode[i].refCount++;
+					return &minode[i];
+				
 			}
+
 		}
-		if (freeINode == -1)
-			freeINode = i;
+	}
+	if(freeINode>=0){
+		printf("Found free MINODE[%d]\n", freeINode);
 	}
 //	printf("i_size = %d, ino = %lu, dev = %u, freeINode = %d\n", tmpInode->i_size, ino, dev, freeINode);
 	tmpMINode = new_MINODE(tmpInode, ino, freeINode, dev);
