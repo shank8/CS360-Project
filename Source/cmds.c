@@ -85,8 +85,9 @@ int _mkdir(char *pathname)
 
 		ino = getino(&dev, parent);
 		pip = iget(dev, ino);
-
-		if(S_ISDIR(pip->INODE.i_mode)){
+		printInode(&pip->INODE);
+		printf("i_mode: %x\nDIR_MODE: %x\n", pip->INODE.i_mode, DIR_MODE);
+		if(pip->INODE.i_mode == DIR_MODE){
 			printf("THIS IS A DIRECTORY!\n");
 		}else{
 			printf("THIS IS NOT A DIRECTORY\n");

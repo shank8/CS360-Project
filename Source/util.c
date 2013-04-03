@@ -53,9 +53,13 @@ unsigned long getino(int *dev, char *pathname)
 	unsigned long inumber = 0;
 	INODE * next = ip;
 
-	printf("Pathname: %s\n", pathname);
+	
 
 	tok = strtok(pathname, "/");
+	if(tok==NULL){
+		inumber = minode[0].ino; // If tok is NULL then the pathname is just '/', therefore the inumber is the root ino or 2
+	}else{
+
 
 	while(tok != NULL)
 	{
@@ -72,8 +76,9 @@ unsigned long getino(int *dev, char *pathname)
 		printf("Path found!\n");
 		tok = strtok(NULL, "/");
 	}
+}
 
-	printf("Search done\n");
+	printf("Search done inum=%d\n", inumber);
 
 	return inumber;
 }
