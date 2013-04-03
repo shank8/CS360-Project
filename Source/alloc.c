@@ -1,3 +1,4 @@
+#include "headers/type.h"
 ////////////////////////////////////////////////////////
 //
 //	INODE Alloc/Dealloc Functions
@@ -109,7 +110,7 @@ unsigned long balloc(int dev)
 
  // get inode Bitmap into buf[ ]
 
- get_block(BBITMAP);       // assume FD, bmap block# = 4  
+ get_block(BBITMAP);       
  
  for (i=0; i < BITS_PER_BLOCK; i++){  // assume you know ninodes
    if (tstbit(block, i)==0){    // assume you have tst_bit() function
@@ -139,7 +140,7 @@ void bdealloc(int dev, unsigned long ino)
   // update free inode count in SUPER and GD
   incFreeBlocks(dev);         // assume you write this function 
 }
-void decFreeInodes(dev){
+void decFreeBlocks(dev){
 		// We need to decrement the total free inodes in both super block and group block
   		SUPER * sp;
   		GD * gd;

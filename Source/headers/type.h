@@ -148,10 +148,17 @@ INODE * findInode(int inumber);
 
 // Alloc/Dealloc functions
 unsigned long ialloc(int dev);
+void idealloc(int dev, unsigned long ino);
+void decFreeInodes(int dev);
+void incFreeInodes(int dev);
+
+unsigned long balloc(int dev);
+void bdealloc(int dev, unsigned long ino);
+void decFreeBlocks(int dev);
+void incFreeBlocks(int dev);
 
 int tstbit(char *buf, int BIT);
 int setbit(char *buf, int BIT);
 int clearbit(char *buf, int BIT);
 
-void decFreeInodes(int dev);
-void incFreeInodes(int dev);
+
