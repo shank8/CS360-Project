@@ -99,12 +99,12 @@ MINODE *iget(int dev, unsigned long ino)
 	MINODE *tmpMINode;
 	//get_block(ino); // should read the inode into "block"
 /////////I dont think I am seeking/reading the correct information///////////
-	lseek(fd,((long)BLOCK_SIZE*ino), 0);
-	read(fd, block, BLOCK_SIZE);
+	/*lseek(fd,((long)BLOCK_SIZE*ino), 0);
+	read(fd, block, BLOCK_SIZE);*/
 
-	//INODE *tmpInode = findInode(ino);
+	INODE *tmpInode = findInode(ino);
 	
-	INODE *tmpInode = (INODE *)block;
+	//INODE *tmpInode = (INODE *)block;
 	
 	int i;
 	int freeINode = -1; // location of first free MINODE

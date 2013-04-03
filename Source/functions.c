@@ -184,9 +184,6 @@ void mount_root()
 		exit(0);
 	}
 
-	root = iget(dev, ROOT_INODE); // Get the root inode from disk and put into minodes
-	
-	proc[SUPER_USER].cwd = proc[1].cwd = root;
 	
 	// Get group block
 	read(fd, block, BLOCK_SIZE);
@@ -202,6 +199,13 @@ void mount_root()
 	get_block(iNodeBeginBlock);
 	cwd = ip = (INODE *)(block)+1;
 	printInode(cwd);
+
+	root = iget(dev, 2); // Get the root inode from disk and put into minodes
+	
+	proc[SUPER_USER].cwd = proc[1].cwd = root;
+
+	printInode(root);
+
 	printf("WE GOT ROOT MAN!!!\n");
 	
 	return;
