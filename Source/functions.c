@@ -211,19 +211,3 @@ void mount_root()
 	
 	return;
 }
-
-void printInode(INODE * ip)
-{
-	int k;
-
-	printf("Mode: %u\n", ip->i_mode);
-	printf("UID: %u\n", ip->i_uid);
-	printf("Size: %u\n", ip->i_size);
-
-	for(k = 0; k<12;k++)
-	{
-		printf("Block[%d]: %u\n", k, ip->i_block[k]);
-	}
-	printf("\n");
-	return;
-}

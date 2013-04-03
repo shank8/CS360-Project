@@ -130,3 +130,10 @@ void printInode(INODE * ip);
 int quit();
 
 INODE * findInode(int inumber);
+
+// Alloc/Dealloc functions
+unsigned long ialloc(int dev);
+
+int tstbit(char *buf, int BIT);
+int setbit(char *buf, int BIT);
+int clearbit(char *buf, int BIT);
