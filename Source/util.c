@@ -97,13 +97,19 @@ unsigned long search(MINODE *mip, char *name)
 MINODE *iget(int dev, unsigned long ino)
 {
 	MINODE *tmpMINode;
-	get_block(ino); // should read the inode into "block"
+	//get_block(ino); // should read the inode into "block"
+/////////I dont think I am seeking/reading the correct information///////////
+	lseek(fd,((long)BLOCK_SIZE*ino), 0);
+	read(fd, block, BLOCK_SIZE);
+
+	//INODE *tmpInode = findInode(ino);
+	
 	INODE *tmpInode = (INODE *)block;
 	
 	int i;
 	int freeINode = -1; // location of first free MINODE
 	
-	for (i = 0; i < 100; i++)
+	for (i = 0; i < NMINODES; i++)
 	{
 		if (&minode[i] != NULL)
 		{
@@ -116,9 +122,9 @@ MINODE *iget(int dev, unsigned long ino)
 		else if (freeINode == -1)
 			freeINode = i;
 	}
-	
-	tmpMINode = new_MINODE(tmpInode, ino, freeINode, dev);
 
+	tmpMINode = new_MINODE(tmpInode, ino, freeINode, dev);
+	
 	return tmpMINode;
 }
 
@@ -149,20 +155,21 @@ void iput(MINODE *mip)
 	// Copy the contents of the MINODE into the location in disk
 	memcpy(inode, &mip->INODE, sizeof(INODE));
 
-///////////////////////////////////////////////////////////////////////////////
-//  This function releases a Minode[]. Since an Minode[]'s refCount indicates
-//  the number of users on this Minode[], releasing is done as follows:
-//    First, dec the refCount by 1. If (after dec) refCount > 0 ==> return;
-//    else:
-//      if Minode[].dirty == 0 ==> no need to write back, so return;
-//      Otherwise, (dirty==1) ==> must write the INODE back to disk.
-//
-//  To write an INODE back to disk:
-//     Use Minode's (dev, ino) to determine which dev and which INODE on disk,
-//  i.e. which disk block and which inode in that block.
-//  Read that block in, copy Minode's INODE into the INODE area in that block
-//  and write the block back to disk.
-////////////////////////////////////////////////////////////////////////////////
+ ///////////////////////////////////////////////////////////////////////////////
+ //  This function releases a Minode[]. Since an Minode[]'s refCount indicates
+ //  the number of users on this Minode[], releasing is done as follows:
+ //    First, dec the refCount by 1. If (after dec) refCount > 0 ==> return;
+ //    else:
+ //      if Minode[].dirty == 0 ==> no need to write back, so return;
+ //      Otherwise, (dirty==1) ==> must write the INODE back to disk.
+ //
+ //     To write an INODE back to disk:
+ //     Use Minode's (dev, ino) to determine which dev and which INODE on disk,
+ //   i.e. which disk block and which inode in that block.
+ //   Read that block in, copy Minode's INODE into the INODE area in that block
+ //   and write the block back to disk.
+ // **just for simplicity, every time you close, print the reference count
+ ////////////////////////////////////////////////////////////////////////////////
 	
 	return;
 }
@@ -223,27 +230,28 @@ int findino(MINODE *mip, unsigned long *myino, unsigned long *parentino)
 	dp = (DIR *)datablock;
 	cp = datablock;
 
-	while(cp < datablock + BLOCK_SIZE && dp->rec_len != 0)
+	while (cp < datablock + BLOCK_SIZE && dp->rec_len != 0)
+	{
+		dp->name[dp->name_len] = '\0';
+
+		strcpy(dpname, dp->name);
+
+		printf("Search: %s\nName: %s\n\n", (char*)name, (char *)dpname);
+
+		if (strcmp(".", dpname)==0) // Set myino to dp->inode
 		{
+			*myino = dp->inode;
+		}
+		else if (strcmp("..", dpname)==0)
+		{
+			*parentino = dp->inode;
+			result = 1;
+			break;
+		}
 
-			dp->name[dp->name_len] = '\0';
-
-			strcpy(dpname, dp->name);
-
-			printf("Search: %s\nName: %s\n\n", (char*)name, (char *)dpname);
-
-			if (strcmp(".", dpname)==0) // Set myino to dp->inode
-			{
-				*myino = dp->inode;
-			}else if(strcmp("..", dpname)==0){
-				*parentino = dp->inode;
-				result = 1;
-				break;
-			}
-
-			cp += dp->rec_len;         // advance cp by rlen in bytes
-			dp = (DIR *)cp;       // pull dp to the next record
-        }
+		cp += dp->rec_len;         // advance cp by rlen in bytes
+		dp = (DIR *)cp;       // pull dp to the next record
+	}
 
 	return result;
 }

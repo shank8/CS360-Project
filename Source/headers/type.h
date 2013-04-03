@@ -39,7 +39,7 @@ typedef struct ext2_dir_entry_2 DIR;    // need this for new version of e2fs
 #define KILLED            2
 
 // Table sizes
-#define NMINODES          50
+#define NMINODES          100
 #define NMOUNT            10
 #define NPROC             10
 #define NFD               10
@@ -94,7 +94,7 @@ extern GD    *gp;
 extern SUPER *sp;
 extern INODE *ip;
 extern DIR   *dp;
-extern MINODE minode[100];	//<=== 100 minodes; refCount=0 means FREE
+extern MINODE minode[NMINODES];	//<=== 100 minodes; refCount=0 means FREE
 extern MINODE *root;	//====>   from here on, / means minode[0].
 extern char device[64], pathname[128];
 extern char block[BLOCK_SIZE], datablock[BLOCK_SIZE];

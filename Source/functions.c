@@ -1,6 +1,6 @@
 #include "headers/type.h"
 
-MINODE minode[100];	//<=== 100 minodes; refCount=0 means FREE
+MINODE minode[NMINODES];	//<=== 100 minodes; refCount=0 means FREE
 MINODE *root;	//====>   from here on, / means minode[0].
 
 char device[64], pathname[128];
@@ -15,7 +15,7 @@ INODE *ip, *cwd;
 DIR   *dp;
 char *cp;
 
-PROC proc[2];
+PROC proc[NPROC];
 
 int dev = 0; // 0 is main device
 
@@ -23,11 +23,6 @@ __u32 iNodeBeginBlock;
 
 MINODE *new_MINODE(INODE * inode, unsigned long ino, int minodeLoc, int dev)
 {
-	//minode[minodeLoc] = malloc(sizeof(struct MINODE *));
-	
-	// TODO: read INODE from the disk and store it
-	//minode[minodeLoc].INODE = ??;
-	
 	memcpy(&(minode[minodeLoc].INODE), inode, sizeof(INODE)); // This should copy the inode
 
 	minode[minodeLoc].dev = dev;
@@ -83,8 +78,8 @@ void get_device()
 //                      | nblocks      |            |
 //                      | ninodes      |            |
 //                      ---------------------------------  
-void init(){
-
+void init()
+{
 	/*
 	typedef struct Proc{
 	  int   uid;
@@ -101,11 +96,11 @@ void init(){
 	int i = 0;
 
 	// INIT SUPERUSER Process
-	proc[0].uid = 0;
-	proc[0].pid = 0;
-	proc[0].gid = 0;
-	proc[0].ppid = 0;
-	proc[0].cwd = NULL;
+	proc[SUPER_USER].uid = 0;
+	proc[SUPER_USER].pid = 0;
+	proc[SUPER_USER].gid = 0;
+	proc[SUPER_USER].ppid = 0;
+	proc[SUPER_USER].cwd = NULL;
 
 	// INIT REG USER Process
 	proc[1].uid = 1;
@@ -113,15 +108,16 @@ void init(){
 	proc[1].gid = 0;
 	proc[1].ppid = 0;
 	proc[1].cwd = NULL;
-
+	
 	// INIT MINODES
-	for(i=0;i<100;i++){
+	for(i=0;i<NMINODES;i++)
+	{
 		minode[i].refCount = 0;
 	}
 
 	// INIT root
 	root = NULL;
-
+	
 	return;
 }
 
@@ -171,15 +167,17 @@ void mount_root()
 //	read(fd, block, BLOCK_SIZE);
 	get_block(SUPERBLOCK);
 	// block is now superblock
-
+	
 	sb = (SUPER *)&block[0];
 	// Now print out some good info
 	printf("#Blocks: %d\n#inodes: %d\n#BlocksPerGroup: %d\n", sb->s_blocks_count, sb->s_inodes_count, sb->s_blocks_per_group);
 	printf("#inodesPerGroup: %d\n#FreeBlocks: %d\n#FreeiNodes: %d\n\n", sb->s_inodes_per_group, sb->s_free_blocks_count, sb->s_free_inodes_count);
 
 	// NEED TO CHECK TO MAKE SURE EXT2
-	if (sb->s_magic == 0xEF53)
+	if (sb->s_magic == SUPER_MAGIC)
+	{
 		printf("%s is an ext2 FS device.\n", device);
+	}
 	else
 	{
 		printf("%s is not an ext2 FS device.\nExiting.\n", device);
@@ -187,9 +185,9 @@ void mount_root()
 	}
 
 	root = iget(dev, ROOT_INODE); // Get the root inode from disk and put into minodes
-
-	proc[0].cwd = proc[1].cwd = root;
-
+	
+	proc[SUPER_USER].cwd = proc[1].cwd = root;
+	
 	// Get group block
 	read(fd, block, BLOCK_SIZE);
 	gb = (GD *)&block[0];
