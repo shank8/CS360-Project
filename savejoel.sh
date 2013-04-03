@@ -9,6 +9,6 @@ else
 
 git add .
 git commit -m "$*"
-git push final master
+git push https://github.com/shank8/CS360-Project.git
 
 fi
