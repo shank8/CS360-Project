@@ -34,7 +34,7 @@ void token_path(char *pathname)
 	while (token != NULL)
 	{
 		strcpy(name[n], token);
-		printf("token%d = %s\n", n, token);
+//		printf("token%d = %s\n", n, token);
 		n++;
 		token = strtok(NULL, "/");
 	}
