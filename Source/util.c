@@ -111,7 +111,7 @@ MINODE *iget(int dev, unsigned long ino)
 	
 	for (i = 0; i < NMINODES; i++)
 	{
-		if (&minode[i] != NULL)
+		if (&minode[i].INODE != NULL)
 		{
 			if (&(minode[i].INODE) == tmpInode)
 			{
@@ -119,10 +119,10 @@ MINODE *iget(int dev, unsigned long ino)
 				return &minode[i];
 			}
 		}
-		else if (freeINode == -1)
+		if (freeINode == -1)
 			freeINode = i;
 	}
-
+//	printf("i_size = %d, ino = %lu, dev = %u, freeINode = %d\n", tmpInode->i_size, ino, dev, freeINode);
 	tmpMINode = new_MINODE(tmpInode, ino, freeINode, dev);
 	
 	return tmpMINode;
