@@ -7,7 +7,7 @@ echo "Usage save.sh <commit message>"
 
 else
 
-git add .
+git add -A
 git commit -m "$*"
 git push https://github.com/shank8/CS360-Project.git
 

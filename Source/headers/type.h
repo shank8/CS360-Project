@@ -127,5 +127,6 @@ int findmyname(MINODE *parent, unsigned long myino, char *myname);
 int findino(MINODE *mip, unsigned long *myino, unsigned long *parentino);
 void mount_root();
 void printInode(INODE * ip);
+int quit();
 
 INODE * findInode(int inumber);

@@ -19,6 +19,7 @@ int main(int argc, char * argv[], char * env[])
 		break;
 	}
 	
+	quit();
 	return 0;
 }
 

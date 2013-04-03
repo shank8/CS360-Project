@@ -292,7 +292,7 @@ unsigned long isearch(INODE * inode, char * name)
 	return result;
 }
 
-INODE * findInode(int inumber)
+INODE *findInode(int inumber)
 {
 	int nblock, num;
 	INODE * ino = NULL;
@@ -308,4 +308,16 @@ INODE * findInode(int inumber)
 		printf("Error reading inode block\n");
 
 	return ino;
+}
+
+int quit()
+{
+	int i;
+	for (i = 0; i < NMINODES; i++)
+	{
+		if (minode[i].dirty == 1)
+		{
+			iput(&(minode[i]));
+		}
+	}
 }
