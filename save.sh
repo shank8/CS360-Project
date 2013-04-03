@@ -9,6 +9,6 @@ else
 
 git add .
 git commit -m "$*"
-git push final master
+git push ./final master
 
 fi
