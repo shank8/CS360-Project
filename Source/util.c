@@ -111,8 +111,9 @@ MINODE *iget(int dev, unsigned long ino)
 	
 	for (i = 0; i < NMINODES; i++)
 	{
-		if (&minode[i] != NULL)
+		if (&(minode[i].INODE) != NULL)
 		{
+			printf("%d\n", i);
 			if (&(minode[i].INODE) == tmpInode)
 			{
 				minode[i].refCount++;

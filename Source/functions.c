@@ -204,7 +204,8 @@ void mount_root()
 	
 	proc[SUPER_USER].cwd = proc[1].cwd = root;
 
-	printInode(root);
+getchar();
+	printInode(&root->INODE);
 
 	printf("WE GOT ROOT MAN!!!\n");
 	
