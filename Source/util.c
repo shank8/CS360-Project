@@ -331,6 +331,59 @@ int quit()
 			iput(&(minode[i]));
 		}
 	}
+	
+	return 0;
+}
+
+void parseString(char *input, char *command, char *pathname)
+{
+	char *token;
+	char cpyInput[64];
+	strcpy(cpyInput, input);
+	token = strtok(cpyInput, " ");
+	if (token != NULL)
+	{
+		strcpy(command, token);
+		token = strtok(NULL, " ");
+	}
+	else
+	{
+		printf("No command was found.\n");
+		return;
+	}
+	if (token != NULL)
+	{
+		strcpy(pathname, token);
+		token = strtok(NULL, " ");
+		return;
+	}
+	strcpy(pathname, "");
+	
+	return;
+}
+
+int findCommand(char *command)
+{
+	if ( (strncmp(command, "menu", 4) == 0) || (strncmp(command, "help", 4) == 0) )
+		return 0;
+	if (strncmp(command, "ls", 2) == 0)
+		return 1;
+	if (strncmp(command, "cd", 2) == 0)
+		return 2;
+	if (strncmp(command, "mkdir", 5) == 0)
+		return 3;
+	if (strncmp(command, "rmdir", 5) == 0)
+		return 4;
+	if (strncmp(command, "pwd", 3) == 0)
+		return 5;
+	if (strncmp(command, "creat", 5) == 0)
+		return 6;
+	if (strncmp(command, "rm", 2) == 0)
+		return 7;
+	if ( (strncmp(command, "quit", 4) == 0) || (strncmp(command, "exit", 4) == 0) )
+		return 8;
+		
+	return -1;
 }
 
 unsigned long ialloc(int dev)
@@ -342,7 +395,7 @@ unsigned long ialloc(int dev)
 
  get_block(IBITMAP);       // assume FD, bmap block# = 4  
  
- for (i=0; i < ninodes; i++){  // assume you know ninodes
+ for (i=0; i < BITS_PER_BLOCK; i++){  // assume you know ninodes
    if (tstbit(block, i)==0){    // assume you have tst_bit() function
      setbit(block, i);          // assume you have set_bit() function
      put_block(IBITMAP);   // write imap block back to disk
@@ -361,7 +414,7 @@ idealloc(int dev, unsigned long ino)
   // get inode bitmap block
   get_block(IBITMAP);
 
-  clear_bit(block, ino-1);         // assume you have clr_bit() function 
+  clearbit(block, ino-1);         // assume you have clr_bit() function 
 
   // write buf back
   put_block(IBITMAP);
