@@ -17,6 +17,8 @@ char *cp;
 
 PROC proc[NPROC];
 
+PROC * running;
+
 int dev = 0; // 0 is main device
 
 __u32 iNodeBeginBlock;
@@ -165,7 +167,7 @@ void mount_root()
 
 	// Get superblock
 //	read(fd, block, BLOCK_SIZE);
-	get_block(SUPERBLOCK);
+	get_block(dev, SUPERBLOCK, block);
 	// block is now superblock
 	
 	sb = (SUPER *)&block[0];
@@ -196,15 +198,19 @@ void mount_root()
 
 	// Now seek to iNodeBeginBlock
 
-	get_block(iNodeBeginBlock);
+	get_block(dev, iNodeBeginBlock, block);
 	cwd = ip = (INODE *)(block)+1;
 
-	root = iget(dev, 2); // Get the root inode from disk and put into minodes
+	root = iget(dev, ROOT_INODE); // Get the root inode from disk and put into minodes
 	
 	proc[SUPER_USER].cwd = proc[1].cwd = root;
 
+	running = &proc[SUPER_USER];
 
+	printf("Printing cwd\n");
 	printInode(cwd);
+
+	printf("Printing root\n");
 	printInode(&(root->INODE));
 
 	printf("WE GOT ROOT MAN!!!\n");

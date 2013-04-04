@@ -5,18 +5,42 @@
 //	Utility functions
 //
 ////////////////////////////////////////////////////////
-int get_block(int blockNumber)
+int get_block(int dev, int blockNumber, char * buf)
 {
 	lseek(fd,(long)BLOCK_SIZE*blockNumber, 0);
-	read(fd, block, BLOCK_SIZE);
+	read(fd, buf, BLOCK_SIZE);
 	
 	return 0;
 }
 
-void put_block(int blockNumber)
+void put_block(int dev, int blockNumber, char * buf)
 {
+	DIR * dp;
+	char * cp, *prev;
+	char str[64];
+
    lseek(fd, (long)BLOCK_SIZE*blockNumber, 0);
-   write(fd, block, BLOCK_SIZE);
+   write(fd, buf, BLOCK_SIZE);
+
+   printf("PUT BLOCK\n");
+   if(dev==1)
+   {
+   dp = (DIR *)buf;
+  cp = buf; 
+  printf("end: %u\n", buf + BLOCK_SIZE);
+
+  while(cp < buf + BLOCK_SIZE  && dp->rec_len != 0){
+  	prev = cp;
+  	strncpy(str, dp->name, dp->name_len);
+  	str[dp->name_len] = '\0';
+
+  	printf("name: %s\n", str);
+  	printf("rec_len: %d\n", dp->rec_len);
+  	printf("name_len: %d\n\n", dp->name_len);
+  	cp += dp->rec_len;            /* advance by rec_len */
+  	dp = (DIR *)cp;
+  }
+}
 }
 
 void token_path(char *pathname)
@@ -154,7 +178,10 @@ void iput(MINODE *mip)
 	int dev = 0, ino;
 	INODE * inode = NULL;
 
-	--mip->refCount;
+	mip->refCount--;
+
+	printf("refCount: %d\n", mip->refCount);
+	printf("dirty: %d\n", mip->dirty);
 	if (mip->refCount > 0)
 		return;
 	else if (mip->dirty == 0)
@@ -172,9 +199,9 @@ void iput(MINODE *mip)
 	ino = mip->ino;
 	inode = findInode(ino);
 
-	// Copy the contents of the MINODE into the location in disk
-	memcpy(inode, &mip->INODE, sizeof(INODE));
 
+	// Copy the contents of the MINODE into the location in disk
+	memcpy(inode, &(mip->INODE), sizeof(INODE));
  ///////////////////////////////////////////////////////////////////////////////
  //  This function releases a Minode[]. Since an Minode[]'s refCount indicates
  //  the number of users on this Minode[], releasing is done as follows:
@@ -190,7 +217,7 @@ void iput(MINODE *mip)
  //   and write the block back to disk.
  // **just for simplicity, every time you close, print the reference count
  ////////////////////////////////////////////////////////////////////////////////
-	
+	printf("test\n\n");
 	return;
 }
 
@@ -246,7 +273,8 @@ int findino(MINODE *mip, unsigned long *myino, unsigned long *parentino)
 	char dpname[256];
 //  For a DIR Minode, extract the inumbers of . and .. 
 //  Read in 0th data block. The inumbers are in the first two dir entries.
-	get_block(mip->INODE.i_block[0]);
+
+	get_block(dev, mip->INODE.i_block[0], block);
 	dp = (DIR *)datablock;
 	cp = datablock;
 
