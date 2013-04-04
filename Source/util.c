@@ -145,7 +145,6 @@ MINODE *iget(int dev, unsigned long ino)
 
 void iput(MINODE *mip)
 {
-	// can we just remove the next line and have the following as: if (--mip->refCount == 0)
 	int dev = 0, ino;
 	INODE * inode = NULL;
 

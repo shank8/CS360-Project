@@ -15,35 +15,36 @@ typedef struct ext2_inode       INODE;
 typedef struct ext2_dir_entry_2 DIR;    // need this for new version of e2fs
 
 
-#define BLOCK_SIZE        1024
-#define BITS_PER_BLOCK    (8*BLOCK_SIZE)
-#define INODES_PER_BLOCK  (BLOCK_SIZE/sizeof(INODE))
+#define BLOCK_SIZE			1024
+#define BITS_PER_BLOCK		(8*BLOCK_SIZE)
+#define INODES_PER_BLOCK	(BLOCK_SIZE/sizeof(INODE))
 
 // Block number of EXT2 FS on FD
-#define SUPERBLOCK        1
-#define GDBLOCK           2
-#define BBITMAP           3
-#define IBITMAP           4
-#define INODEBLOCK        5
-#define ROOT_INODE        2
+#define SUPERBLOCK			1
+#define GDBLOCK				2
+#define BBITMAP				3
+#define IBITMAP				4
+#define INODEBLOCK			5
+#define ROOT_INODE			2
 
 // Default dir and regulsr file modes
-#define DIR_MODE          0040777 
-#define FILE_MODE         0100644
-#define SUPER_MAGIC       0xEF53
-#define SUPER_USER        0
+#define DIR_MODE			0040777 
+#define FILE_MODE			0100644
+//#define SYM_MODE			???????
+#define SUPER_MAGIC			0xEF53
+#define SUPER_USER			0
 
 // Proc status
-#define FREE              0
-#define BUSY              1
-#define KILLED            2
+#define FREE				0
+#define BUSY				1
+#define KILLED				2
 
 // Table sizes
-#define NMINODES          100
-#define NMOUNT            10
-#define NPROC             10
-#define NFD               10
-#define NOFT              50
+#define NMINODES			100
+#define NMOUNT				10
+#define NPROC				10
+#define NFD					10
+#define NOFT				50
 
 // Open File Table
 typedef struct Oft{
@@ -67,7 +68,7 @@ typedef struct Proc{
 } PROC;
 
 // In-memory inodes structure
-typedef struct Minode{		
+typedef struct Minode{
   INODE    INODE;               // disk inode
   ushort   dev;
   unsigned long ino;
@@ -90,14 +91,14 @@ typedef struct Mount{
 
 
 // Declare externals
-extern GD    *gp;
-extern SUPER *sp;
-extern INODE *ip;
-extern DIR   *dp;
-extern MINODE minode[NMINODES];	//<=== 100 minodes; refCount=0 means FREE
-extern MINODE *root;	//====>   from here on, / means minode[0].
-extern char device[64], pathname[128];
-extern char block[BLOCK_SIZE], datablock[BLOCK_SIZE];
+extern GD		*gp;
+extern SUPER	*sp;
+extern INODE	*ip;
+extern DIR		*dp;
+extern MINODE	minode[NMINODES];	//<=== 100 minodes; refCount=0 means FREE
+extern MINODE	*root;	//====>   from here on, / means minode[0].
+extern char	device[64], pathname[128];
+extern char	block[BLOCK_SIZE], datablock[BLOCK_SIZE];
 char name [128][128];
 
 extern int fd, n;	// file descriptor, number of names in path
@@ -108,6 +109,7 @@ extern INODE *ip, *cwd;
 extern DIR   *dp;
 extern char *cp;
 extern __u32 iNodeBeginBlock;
+extern PROC proc[NPROC];
 
 // All function declaractions will be here
 
