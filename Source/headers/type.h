@@ -7,6 +7,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <time.h>
 
 // define shorter TYPES, save typing efforts
 typedef struct ext2_group_desc  GD;
@@ -28,11 +29,13 @@ typedef struct ext2_dir_entry_2 DIR;    // need this for new version of e2fs
 #define ROOT_INODE			2
 
 // Default dir and regulsr file modes
-#define DIR_MODE			0040777 
-#define FILE_MODE			0100644
+
+#define DIR_MODE          0x41ED //0040777 
+#define FILE_MODE         0100644
 //#define SYM_MODE			???????
-#define SUPER_MAGIC			0xEF53
-#define SUPER_USER			0
+#define SUPER_MAGIC       0xEF53
+#define SUPER_USER        0
+
 
 // Proc status
 #define FREE				0
@@ -111,14 +114,16 @@ extern char *cp;
 extern __u32 iNodeBeginBlock;
 extern PROC proc[NPROC];
 
+extern PROC *running;
+extern int dev;
 // All function declaractions will be here
 
 // Utility
 MINODE *new_MINODE(INODE * inode, unsigned long ino, int minodeLoc, int dev);
 void get_device();
 void init();
-int get_block(int blockNumber);
-void put_block(int blockNumber);
+int get_block(int dev, int blockNumber, char * buf);
+void put_block(int dev, int blockNumber, char * buf);
 void token_path(char *pathname);
 unsigned long getino(int *dev, char *pathname);
 unsigned long search(MINODE *mip, char *name);
@@ -162,5 +167,3 @@ void incFreeBlocks(int dev);
 int tstbit(char *buf, int BIT);
 int setbit(char *buf, int BIT);
 int clearbit(char *buf, int BIT);
-
-

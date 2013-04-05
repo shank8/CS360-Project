@@ -5,18 +5,22 @@
 //	Utility functions
 //
 ////////////////////////////////////////////////////////
-int get_block(int blockNumber)
+int get_block(int dev, int blockNumber, char * buf)
 {
 	lseek(fd,(long)BLOCK_SIZE*blockNumber, 0);
-	read(fd, block, BLOCK_SIZE);
+	read(fd, buf, BLOCK_SIZE);
 	
 	return 0;
 }
 
-void put_block(int blockNumber)
+void put_block(int dev, int blockNumber, char *buf)
 {
-   lseek(fd, (long)BLOCK_SIZE*blockNumber, 0);
-   write(fd, block, BLOCK_SIZE);
+	char str[64];
+
+	lseek(fd, (long)BLOCK_SIZE*blockNumber, 0);
+	write(fd, buf, BLOCK_SIZE);
+	
+	return;
 }
 
 void token_path(char *pathname)
@@ -53,27 +57,33 @@ unsigned long getino(int *dev, char *pathname)
 	unsigned long inumber = 0;
 	INODE * next = ip;
 
-	printf("Pathname: %s\n", pathname);
+	
 
 	tok = strtok(pathname, "/");
-
-	while(tok != NULL)
+	if(tok==NULL)
 	{
-		printf("tok: %s\n", tok);
-		inumber = isearch(next, tok);
-
-		if(inumber == 0)
+		inumber = minode[0].ino; // If tok is NULL then the pathname is just '/', therefore the inumber is the root ino or 2
+	}
+	else
+	{
+		while(tok != NULL)
 		{
-			printf("Path cannot be found\n");
-			return inumber;
-		}
+			printf("tok: %s\n", tok);
+			inumber = isearch(next, tok);
 
-		next = findInode(inumber);
-		printf("Path found!\n");
-		tok = strtok(NULL, "/");
+			if(inumber == 0)
+			{
+				printf("Path cannot be found\n");
+				return inumber;
+			}
+
+			next = findInode(inumber);
+			printf("Path found!\n");
+			tok = strtok(NULL, "/");
+		}
 	}
 
-	printf("Search done\n");
+	printf("Search done inum=%lu\n", inumber);
 
 	return inumber;
 }
@@ -116,25 +126,23 @@ MINODE *iget(int dev, unsigned long ino)
 	for (i = 0; i < NMINODES; i++)
 	{
 		// We have 2 cases, if the refCount is 0, we found an open spot; else find itself
-		if (minode[i].refCount == 0){
-
+		if (minode[i].refCount == 0)
+		{
 			if (freeINode == -1) 
 				freeINode = i;
-
-		}else{
-
+		}
+		else
+		{
 			if (minode[i].ino == ino)
 			{
 				printf("Found used MINODE[%d]\n", i);
-				
-					minode[i].refCount++;
-					return &minode[i];
-				
+				minode[i].refCount++;
+				return &minode[i];
 			}
-
 		}
 	}
-	if(freeINode>=0){
+	if (freeINode>=0)
+	{
 		printf("Found free MINODE[%d]\n", freeINode);
 	}
 //	printf("i_size = %d, ino = %lu, dev = %u, freeINode = %d\n", tmpInode->i_size, ino, dev, freeINode);
@@ -148,7 +156,10 @@ void iput(MINODE *mip)
 	int dev = 0, ino;
 	INODE * inode = NULL;
 
-	--mip->refCount;
+	mip->refCount--;
+
+	printf("refCount: %d\n", mip->refCount);
+	printf("dirty: %d\n", mip->dirty);
 	if (mip->refCount > 0)
 		return;
 	else if (mip->dirty == 0)
@@ -166,9 +177,9 @@ void iput(MINODE *mip)
 	ino = mip->ino;
 	inode = findInode(ino);
 
-	// Copy the contents of the MINODE into the location in disk
-	memcpy(inode, &mip->INODE, sizeof(INODE));
 
+	// Copy the contents of the MINODE into the location in disk
+	memcpy(inode, &(mip->INODE), sizeof(INODE));
  ///////////////////////////////////////////////////////////////////////////////
  //  This function releases a Minode[]. Since an Minode[]'s refCount indicates
  //  the number of users on this Minode[], releasing is done as follows:
@@ -184,7 +195,7 @@ void iput(MINODE *mip)
  //   and write the block back to disk.
  // **just for simplicity, every time you close, print the reference count
  ////////////////////////////////////////////////////////////////////////////////
-	
+	printf("test\n\n");
 	return;
 }
 
@@ -240,7 +251,8 @@ int findino(MINODE *mip, unsigned long *myino, unsigned long *parentino)
 	char dpname[256];
 //  For a DIR Minode, extract the inumbers of . and .. 
 //  Read in 0th data block. The inumbers are in the first two dir entries.
-	get_block(mip->INODE.i_block[0]);
+
+	get_block(dev, mip->INODE.i_block[0], block);
 	dp = (DIR *)datablock;
 	cp = datablock;
 
