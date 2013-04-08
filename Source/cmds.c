@@ -84,30 +84,52 @@ int _ls(char *path)
 int _cd(char *pathname)
 {
 	printf("~~~~~~~~CD~~~~~~~~\n\n");
-	
-	
-	
-	return 0;
-}
+	int result = -1;
+  unsigned long ino;
+  MINODE * mip;
 
-int _mkdir(char *pathname)
-{
-	char * parent, * child;
-	char fullpath[128], fullpath2[128];
-	int r;
-	unsigned long ino;
-	MINODE * pip;
+  // No pathname, go to root
+  if(pathname[0] == 0){ 
+    iput(running->cwd);
+    running->cwd = iget(ROOT_DEV, ROOT_INODE);
 
-	// Create a copy of the pathname so we don't alter it directly
-	strcpy(fullpath, pathname);
-	strcpy(fullpath2, pathname);
+    result = 0;
+  }else{
+  // Get the inode of the pathname into MINODE
+    ino = getino(&dev, pathname);
+    mip = iget(dev, ino);
 
-	printf("~~~~~~MKDIR~~~~~~~\n\n");
-	/*  1. Ask for a pahtname, e.g. /a/b/c  or a/b/c, etc.
+    // Make sure its a DIR
+    if(mip->INODE.i_mode == DIR_MODE){
 
-		2.  if (pathname[0] == '/') 
-		        dev = root->dev;
-		     else
+    }else{
+      
+    }
+
+  }
+    
+    
+    return result;
+  }
+  
+  int _mkdir(char *pathname)
+  {
+    char * parent, * child;
+    char fullpath[128], fullpath2[128];
+    int r;
+    unsigned long ino;
+    MINODE * pip;
+  
+    // Create a copy of the pathname so we don't alter it directly
+    strcpy(fullpath, pathname);
+    strcpy(fullpath2, pathname);
+  
+    printf("~~~~~~MKDIR~~~~~~~\n\n");
+    /*  1. Ask for a pahtname, e.g. /a/b/c  or a/b/c, etc.
+  
+      2.  if (pathname[0] == '/') 
+              dev = root->dev;
+           else)
 		        dev = cwd->dev;
 		3. Let  
 		     parent = dirname(pathname);   parent= "/a/b"
@@ -145,6 +167,7 @@ int _mkdir(char *pathname)
 		// Get the MINODE of the parent
 		pip = iget(dev, ino);
 		printInode(&pip->INODE);
+
 		printf("i_mode: %x\nDIR_MODE: %x\n", pip->INODE.i_mode, DIR_MODE);
 		if(pip->INODE.i_mode == DIR_MODE){
 			printf("THIS IS A DIRECTORY!\n");
@@ -153,9 +176,6 @@ int _mkdir(char *pathname)
 		}
 
 		r = my_mkdir(pip, child);
-
-		printf("test3\n\n");
-
 	
 	return 0;
 }
@@ -232,25 +252,40 @@ int my_mkdir(MINODE *pip, char *name)
 
   // C CODE:
   //**********************************************************************
+
+	pip->dirty = 1;
 	int inumber;
 	int bnumber;
 	int ideal_len;
 	int need_len;
 	int new_len;
 	int i;
-//	DIR * dp;
+	DIR * dp;
 	char * cp, * prev;
 	char buf[BLOCK_SIZE];
 	MINODE * mip;
 	time_t curTime;
 
-	char str[64];
+//	char str[64];
 
 	dev = pip->dev;
 
 	inumber = ialloc(dev);
 	bnumber = balloc(dev);
 
+/*
+typedef struct Minode
+{		
+	INODE    INODE;               // disk inode
+	ushort   dev;
+	unsigned long ino;
+	ushort   refCount;
+	ushort   dirty;
+	ushort   mounted;
+	struct Mount *mountptr;
+	char     name[128];           // name string of file
+} MINODE;
+*/
 	mip = iget(dev,inumber);
 
 	mip->INODE.i_mode = 0x41ED;		/* DIR and permissions */
@@ -267,10 +302,12 @@ int my_mkdir(MINODE *pip, char *name)
 
 	for (i=0; i<15; i++)
 	{
-	mip->INODE.i_block[i] = 0;
+		mip->INODE.i_block[i] = 0;
 	}
 
 	mip->INODE.i_block[0] = bnumber; 
+
+	printInode(&mip->INODE);
 
 	iput(mip);
   /*
@@ -338,7 +375,6 @@ int my_mkdir(MINODE *pip, char *name)
 
 9. inc parent inodes's link count by 1; touch its atime and mark it DIRTY
 */
-	printInode(&pip->INODE);
 	get_block(dev, pip->INODE.i_block[0], buf);
 
 	dp = (DIR *)buf;
@@ -347,21 +383,13 @@ int my_mkdir(MINODE *pip, char *name)
 
 	while(cp < buf + BLOCK_SIZE  && dp->rec_len != 0)
 	{
-		prev = cp;
-		strncpy(str, dp->name, dp->name_len);
-		str[dp->name_len] = '\0';
-
-		printf("name: %s\n", str);
-		printf("rec_len: %d\n", dp->rec_len);
-		printf("name_len: %d\n\n", dp->name_len);
+		prev = cp;  
 		cp += dp->rec_len;            /* advance by rec_len */
 		dp = (DIR *)cp;
 	}
  
 	dp = (DIR *)prev; // dp is the last entry
 	cp = prev;
-
-
 
 	need_len = 4*((8 + strlen(name) + 3)/4);  // Get needed length for new directory
 
@@ -372,9 +400,7 @@ int my_mkdir(MINODE *pip, char *name)
 	if(dp->rec_len - ideal_len >= need_len)
 	{
 		new_len = dp->rec_len - ideal_len;
-
 		dp->rec_len = ideal_len; // Set the last entry to the ideal length
-
 		cp += dp->rec_len;	// Move to the end of the last entry
 
 		dp = (DIR *)cp;
@@ -393,30 +419,13 @@ int my_mkdir(MINODE *pip, char *name)
 
 	get_block(0, pip->INODE.i_block[0], buf);
 
-	printf("AFTER GET BLOCK\n");
-	dp = (DIR *)buf;
-	cp = buf; 
-	printf("end: %s\n", buf + BLOCK_SIZE);
 
-	while(cp < buf + BLOCK_SIZE  && dp->rec_len != 0)
-	{
-		prev = cp;
-		strncpy(str, dp->name, dp->name_len);
-		str[dp->name_len] = '\0';
+  	put_block(1, pip->INODE.i_block[0], buf);
 
-		printf("name: %s\n", str);
-		printf("rec_len: %d\n", dp->rec_len);
-		printf("name_len: %d\n\n", dp->name_len);
-		cp += dp->rec_len;            /* advance by rec_len */
-		dp = (DIR *)cp;
-	}
 
     time(&curTime);
-    printf("curTime: %d\n", (int)curTime);
     pip->INODE.i_atime = curTime;
     iput(pip);
 
-	printf("test2\n\n");
-
 	return 1;
-}  
+}

@@ -117,6 +117,8 @@ void init()
 		minode[i].refCount = 0;
 	}
 
+
+
 	// INIT root
 	root = NULL;
 	
@@ -154,7 +156,7 @@ void mount_root()
 	printf("Mounting root...\n");
 
 	// Open device for read
-	fd = open(device, O_RDONLY);
+	fd = open(device, O_RDWR);
 	if(fd < 0)
 	{
 		printf("Error opening device...\n");
