@@ -22,25 +22,6 @@ void put_block(int dev, int blockNumber, char * buf)
    lseek(fd, (long)BLOCK_SIZE*blockNumber, 0);
    write(fd, buf, BLOCK_SIZE);
 
-   printf("PUT BLOCK\n");
-   if(dev==1)
-   {
-   dp = (DIR *)buf;
-  cp = buf; 
-  printf("end: %u\n", buf + BLOCK_SIZE);
-
-  while(cp < buf + BLOCK_SIZE  && dp->rec_len != 0){
-  	prev = cp;
-  	strncpy(str, dp->name, dp->name_len);
-  	str[dp->name_len] = '\0';
-
-  	printf("name: %s\n", str);
-  	printf("rec_len: %d\n", dp->rec_len);
-  	printf("name_len: %d\n\n", dp->name_len);
-  	cp += dp->rec_len;            /* advance by rec_len */
-  	dp = (DIR *)cp;
-  }
-}
 }
 
 void token_path(char *pathname)
@@ -75,7 +56,7 @@ unsigned long getino(int *dev, char *pathname)
 
 	char * tok;
 	unsigned long inumber = 0;
-	INODE * next = ip;
+	INODE * next = &root->INODE;
 
 	
 
@@ -130,15 +111,12 @@ unsigned long search(MINODE *mip, char *name)
 MINODE *iget(int dev, unsigned long ino)
 {
 	MINODE *tmpMINode;
-	//get_block(ino); // should read the inode into "block"
-/////////I dont think I am seeking/reading the correct information///////////
-	/*lseek(fd,((long)BLOCK_SIZE*ino), 0);
-	read(fd, block, BLOCK_SIZE);*/
+
 
 	INODE *tmpInode = findInode(ino);
-	
-	//INODE *tmpInode = (INODE *)block;
-	
+		
+	printInode(tmpInode);
+
 	int i;
 	int freeINode = -1; // location of first free MINODE
 	
@@ -179,9 +157,10 @@ void iput(MINODE *mip)
 	INODE * inode = NULL;
 
 	mip->refCount--;
-
+	printf("name: %s\n", mip->name);
 	printf("refCount: %d\n", mip->refCount);
 	printf("dirty: %d\n", mip->dirty);
+	printf("ino: %d\n", mip->ino);
 	if (mip->refCount > 0)
 		return;
 	else if (mip->dirty == 0)
@@ -324,11 +303,13 @@ unsigned long isearch(INODE * inode, char * name)
 			dp->name[dp->name_len] = '\0';
 
 			strcpy(dpname, dp->name);
-
+			printf("strlen: %d", strlen(name));
 			printf("Search: %s\nName: %s\n\n", name, dpname);
-			if (strcmp(name, dpname)==0)
+			if (strncmp(name, dpname, strlen(dpname))==0)
 			{
+				printf("ladjflasdfj");
 				result = dp->inode;
+				return result;
 			}
 
 			cp += dp->rec_len;         // advance cp by rlen in bytes

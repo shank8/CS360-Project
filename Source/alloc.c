@@ -7,7 +7,7 @@
 
 unsigned long ialloc(int dev)
 {
- int i;
+ int i, j;
 
  // get inode Bitmap into buf[ ]
 
@@ -16,6 +16,8 @@ unsigned long ialloc(int dev)
  for (i=0; i < BITS_PER_BLOCK; i++){  // assume you know ninodes
    if (tstbit(block, i)==0){    // assume you have tst_bit() function
      setbit(block, i);          // assume you have set_bit() function
+
+     printf("open space: %d\n", i);
      put_block(dev, IBITMAP, block);   // write imap block back to disk
 
      // update free inode count in SUPER and GD on dev
