@@ -1,4 +1,4 @@
 #!/bin/bash
 
-echo "$(date) - $*" >> README.md
+echo -e "$(date) - $*\n" >> README.md
 echo "Log successful..."

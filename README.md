@@ -14,3 +14,8 @@ Wed Apr  3 14:16:01 PDT 2013 - Created alloc/dealloc functions
 Wed Apr  3 15:38:14 PDT 2013 - Added some mkdir functionality.. not done yet though
 
 Mon Apr  8 14:38:38 PDT 2013 - Finished cd and pwd I believe.. we still need ls and mkdir to work correctly though
+
+Mon Apr  8 14:43:55 PDT 2013 - Fixed this log.sh script
+
+Mon Apr  8 14:44:08 PDT 2013 - Pushed to cd branch
+
