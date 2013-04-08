@@ -219,3 +219,37 @@ void mount_root()
 	
 	return;
 }
+
+void printDir(unsigned long ino){
+
+	/*struct ext2_dir_entry_2 {
+			__u32	inode;			/* Inode number 
+			__u16	rec_len;		/* Directory entry length 
+			__u8	name_len;		/* Name length 
+			__u8	file_type;
+			char	name[EXT2_NAME_LEN];	/* File name 
+		};*/
+
+	char buf[BLOCK_SIZE];
+	char name[256];
+	INODE * inode;
+
+	inode = findInode(ino);
+	get_block(dev, inode->i_block[0], buf);
+      // Iterate through dir entries to find ..
+    dp = (DIR *)buf;
+    cp = buf; 
+  
+  	
+      printf("---- DIR ENTRIES ----\n");
+      while(cp < buf + BLOCK_SIZE){
+
+      	strncpy(name, dp->name, dp->name_len);
+      	name[dp->name_len] = '\0';
+
+      	printf("inode: %d\n", (int)dp->inode);
+      	printf("name: %s\n\n", name);
+        cp += dp->rec_len;            /* advance by rec_len */
+        dp = (DIR *)cp;
+      }
+}

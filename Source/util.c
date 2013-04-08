@@ -112,10 +112,9 @@ MINODE *iget(int dev, unsigned long ino)
 {
 	MINODE *tmpMINode;
 
-
 	INODE *tmpInode = findInode(ino);
 		
-	printInode(tmpInode);
+	//printInode(tmpInode);
 
 	int i;
 	int freeINode = -1; // location of first free MINODE
@@ -196,7 +195,6 @@ void iput(MINODE *mip)
  //   and write the block back to disk.
  // **just for simplicity, every time you close, print the reference count
  ////////////////////////////////////////////////////////////////////////////////
-	printf("test\n\n");
 	return;
 }
 
@@ -226,15 +224,18 @@ int findmyname(MINODE *parent, unsigned long myino, char *myname)
 		{
 			k = 0;
 
-			dp->name[dp->name_len] = '\0';
+			strncpy(dpname, dp->name, dp->name_len);
+			dpname[dp->name_len] = '\0';
 
-			strcpy(dpname, dp->name);
-
-			printf("Search: %s\nName: %s\n\n", (char *)name, (char *)dpname);
+			//printf("Search Ino: %d\nName: %d\n\n", (int)myino, (int)dp->inode);
 			if (myino == dp->inode) // Found inode
 			{
-				result = 1;
-				myname = (char*)(&dp->name);
+				result = 0;
+				strcpy(myname, dpname);
+				//printf("FOUND THE NAME!!!\n");
+			
+				break;
+				
 			}
 
 			cp += dp->rec_len;         // advance cp by rlen in bytes
@@ -303,11 +304,10 @@ unsigned long isearch(INODE * inode, char * name)
 			dp->name[dp->name_len] = '\0';
 
 			strcpy(dpname, dp->name);
-			printf("strlen: %d", strlen(name));
+			printf("strlen: %d\n", strlen(name));
 			printf("Search: %s\nName: %s\n\n", name, dpname);
 			if (strncmp(name, dpname, strlen(dpname))==0)
 			{
-				printf("ladjflasdfj");
 				result = dp->inode;
 				return result;
 			}

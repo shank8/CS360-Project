@@ -45,13 +45,21 @@ int _cd(char *pathname)
 
     // Make sure its a DIR
     if(mip->INODE.i_mode == DIR_MODE){
+        printf("BEFORE CD:\n");
+        printInode(&running->cwd->INODE);
+        iput(running->cwd);
+        running->cwd = mip;
 
+        printf("AFTER CD:\n");
+        printInode(&running->cwd->INODE);
+
+        result = 0;
     }else{
-      
+        result = 1;
+        printf("Given pathname is not a directory...\n");
     }
 
   }
-    
     
     return result;
   }
@@ -133,12 +141,16 @@ int _rmdir(char *pathname)
 	return 0;
 }
 
-int _pwd(char *pathname)
+int _pwd()
 {
 	printf("~~~~~~~PWD~~~~~~~~\n\n");
 	
-	
-	
+  if(running->cwd->ino == ROOT_INODE){
+    printf("/");
+  }else{
+	rec_pwd(running->cwd);
+  }
+	printf("\n");
 	return 0;
 }
 
@@ -168,7 +180,76 @@ int __exit(char *pathname)
 	return 0;
 }
 
+int rec_pwd(MINODE *wd){
 
+  /*
+  Write this as a recursive function, which
+
+   1. if wd is already the root:
+         print /; return;
+
+   2. Get parent's MINODE pointer wd; 
+          (HOW? get i_block[0]; then iget(dev, ino of ..))
+      Call pwd(wd) again with parent's MINODE pointer;
+
+   3. Print wd's name followed by a /;
+       (HOW TO get the name string of a MINODE?)
+       You have this guy's ino and its parent's MINODE.
+       Search the parent DIR for an entry with this ino. Then you have its name.
+
+   4. FOR LEVEL-3: If you implement MOUNTing, make sure your recursion can
+                   cross mounting points.
+  */
+
+  unsigned long pino = 0, ino = wd->ino;
+  MINODE * nwd;
+  char buf[BLOCK_SIZE];
+  char name[256];
+  int c = 0;
+
+  if(wd->ino == ROOT_INODE){
+      //printf("");
+  }else{
+
+      get_block(dev, wd->INODE.i_block[0], buf);
+      // Iterate through dir entries to find ..
+      dp = (DIR *)buf;
+      cp = buf; 
+  
+
+      while(cp < buf + BLOCK_SIZE){
+
+        if(c==1){
+          pino = dp->inode;
+          printf("FOUND PARENT - %d\n", pino);
+        }
+        cp += dp->rec_len;            /* advance by rec_len */
+        dp = (DIR *)cp;
+        c++;
+      }
+
+      if(pino == 0){
+        printf("Error finding '..'\n");
+        return -1;
+      }else{
+
+       // getchar();
+        //printDir(pino);
+     
+        nwd = iget(dev, pino);
+      
+        rec_pwd(nwd);
+     
+        findmyname(nwd, ino, &name[0]);
+
+        printf("/%s", name);
+      }
+
+  }
+
+  return 0;
+
+}
 
 
 
@@ -197,7 +278,7 @@ int my_mkdir(MINODE *pip, char *name)
   // C CODE:
   //**********************************************************************
 
-		   pip->dirty = 1;
+	
   int inumber;
   int bnumber;
   int ideal_len;
@@ -213,6 +294,7 @@ int my_mkdir(MINODE *pip, char *name)
   char str[64];
 
   dev = pip->dev;
+  pip->dirty = 1;
 
   inumber = ialloc(dev);
   bnumber = balloc(dev);
@@ -324,7 +406,7 @@ int my_mkdir(MINODE *pip, char *name)
 
   dp = (DIR *)buf;
   cp = buf; 
-  printf("end: %u\n", buf + BLOCK_SIZE);
+  printf("end: %d\n", (int)buf + BLOCK_SIZE);
 
   while(cp < buf + BLOCK_SIZE  && dp->rec_len != 0){
   	prev = cp;  
@@ -365,7 +447,7 @@ int my_mkdir(MINODE *pip, char *name)
 
   dp = (DIR *)buf;
   cp = buf; 
-  printf("end: %u\n", buf + BLOCK_SIZE);
+  printf("end: %u\n", (int)buf + BLOCK_SIZE);
 
   while(cp < buf + BLOCK_SIZE  && dp->rec_len != 0){
   	prev = cp;
