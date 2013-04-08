@@ -29,18 +29,36 @@ int _cd(char *pathname)
 {
 	printf("~~~~~~~~CD~~~~~~~~\n\n");
 	int result = -1;
-  unsigned long ino;
+  unsigned long ino, pino;
   MINODE * mip;
 
   // No pathname, go to root
+ 
+
   if(pathname[0] == 0){ 
     iput(running->cwd);
     running->cwd = iget(ROOT_DEV, ROOT_INODE);
 
     result = 0;
+  }else if(strcmp(pathname, ".")==0){
+    // Stay here
+    running->cwd = running->cwd;
+  }else if(strcmp(pathname, "..")==0){
+   
+    // We need to find the inode of the parent
+    printDir(running->cwd->ino);
+    findino(running->cwd, &ino, &pino);
+   // printf("ino = %d\npino = %d\n\n", ino, pino);
+
+    mip = iget(dev, pino);
+    iput(running->cwd);
+    running->cwd = mip;
+
   }else{
+
   // Get the inode of the pathname into MINODE
     ino = getino(&dev, pathname);
+    printf("CD -- ino = %d\n", (int)ino);
     mip = iget(dev, ino);
 
     // Make sure its a DIR

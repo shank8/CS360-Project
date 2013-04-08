@@ -251,27 +251,29 @@ int findino(MINODE *mip, unsigned long *myino, unsigned long *parentino)
 {
 	int result = 0;
 	char dpname[256];
+	char datablock[BLOCK_SIZE];
 //  For a DIR Minode, extract the inumbers of . and .. 
 //  Read in 0th data block. The inumbers are in the first two dir entries.
 
-	get_block(dev, mip->INODE.i_block[0], block);
+	get_block(dev, mip->INODE.i_block[0], datablock);
 	dp = (DIR *)datablock;
 	cp = datablock;
 
-	while (cp < datablock + BLOCK_SIZE && dp->rec_len != 0)
+	while (cp < datablock + BLOCK_SIZE)
 	{
-		dp->name[dp->name_len] = '\0';
+		
 
-		strcpy(dpname, dp->name);
-
-		printf("Search: %s\nName: %s\n\n", (char*)name, (char *)dpname);
-
+		strncpy(dpname, dp->name, dp->name_len);
+		dpname[dp->name_len] = '\0';
+	
 		if (strcmp(".", dpname)==0) // Set myino to dp->inode
 		{
+			//printf("found myino: %d\n", (int)dp->inode);
 			*myino = dp->inode;
 		}
 		else if (strcmp("..", dpname)==0)
 		{
+			//printf("found pino: %d\n", (int)dp->inode);
 			*parentino = dp->inode;
 			result = 1;
 			break;
