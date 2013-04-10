@@ -10,10 +10,10 @@
 #include <time.h>
 
 // define shorter TYPES, save typing efforts
-typedef struct ext2_group_desc  GD;
-typedef struct ext2_super_block SUPER;
-typedef struct ext2_inode       INODE;
-typedef struct ext2_dir_entry_2 DIR;    // need this for new version of e2fs
+typedef struct ext2_group_desc	GD;
+typedef struct ext2_super_block	SUPER;
+typedef struct ext2_inode		INODE;
+typedef struct ext2_dir_entry_2	DIR;    // need this for new version of e2fs
 
 
 #define BLOCK_SIZE			1024
@@ -30,12 +30,11 @@ typedef struct ext2_dir_entry_2 DIR;    // need this for new version of e2fs
 
 // Default dir and regulsr file modes
 
-#define DIR_MODE          0x41ED //0040777 
-#define FILE_MODE         0100644
+#define DIR_MODE			0x41ED //0040777 
+#define FILE_MODE			0100644
 //#define SYM_MODE			???????
-#define SUPER_MAGIC       0xEF53
-#define SUPER_USER        0
-
+#define SUPER_MAGIC			0xEF53
+#define SUPER_USER			0
 
 // Proc status
 #define FREE				0
@@ -104,20 +103,20 @@ extern MINODE	minode[NMINODES];	//<=== 100 minodes; refCount=0 means FREE
 extern MINODE	*root;	//====>   from here on, / means minode[0].
 extern char	device[64], pathname[128];
 extern char	block[BLOCK_SIZE], datablock[BLOCK_SIZE];
-char name [128][128];
+extern char	name [128][128];
 
 extern int fd, n;	// file descriptor, number of names in path
 
-extern SUPER *sb;
-extern GD    *gb;
-extern INODE *ip, *cwd;
-extern DIR   *dp;
-extern char *cp;
-extern __u32 iNodeBeginBlock;
-extern PROC proc[NPROC];
+extern SUPER	*sb;
+extern GD		*gb;
+extern INODE	*ip, *cwd;
+extern DIR		*dp;
+extern char	*cp;
+extern __u32	iNodeBeginBlock;
+extern PROC	proc[NPROC];
 
-extern PROC *running;
-extern int dev;
+extern PROC	*running;
+extern int		dev;
 // All function declaractions will be here
 
 // Utility

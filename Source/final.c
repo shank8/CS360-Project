@@ -21,7 +21,7 @@ int main(int argc, char * argv[], char * env[])
 		strcpy(line, "");
 		strcpy(command, "");
 		strcpy(pathname, "");
-		printf("input a command (type help for more info): ");
+		printf("\n\ninput a command (type help for more info): ");
 		//read a line containting  command [pathname]; // [ ] means optional
 		fgets(line, 128, stdin);
 		line[strlen(line)-1] = '\0';

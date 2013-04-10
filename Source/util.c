@@ -147,14 +147,15 @@ MINODE *iget(int dev, unsigned long ino)
 
 void iput(MINODE *mip)
 {
-	int dev = 0, ino;
+//	int dev = 0,
+	int ino;
 	INODE * inode = NULL;
 
 	mip->refCount--;
 	printf("name: %s\n", mip->name);
 	printf("refCount: %d\n", mip->refCount);
 	printf("dirty: %d\n", mip->dirty);
-	printf("ino: %d\n", mip->ino);
+	printf("ino: %lu\n", mip->ino);
 	if (mip->refCount > 0)
 		return;
 	else if (mip->dirty == 0)
@@ -203,7 +204,8 @@ int findmyname(MINODE *parent, unsigned long myino, char *myname)
 	// This is basically the search and isearch functions except in stead of finding a name and returning an inode
 	// we are searching for an inode and returning a name
 
-	int i = 0, k = 0; // do we need the variable k?
+	int i = 0;
+//	int k = 0; // do we need the variable k?
 	char dpname[256];
 	int result = 0;
 	INODE * inode = &(parent->INODE);
@@ -218,7 +220,7 @@ int findmyname(MINODE *parent, unsigned long myino, char *myname)
 
 		while(cp < datablock + BLOCK_SIZE && dp->rec_len != 0)
 		{
-			k = 0;
+//			k = 0;
 
 			dp->name[dp->name_len] = '\0';
 
