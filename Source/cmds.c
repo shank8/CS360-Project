@@ -100,107 +100,123 @@ int _cd(char *pathname)
 {
 	printf("~~~~~~~~CD~~~~~~~~\n\n");
 	int result = -1;
-	unsigned long ino;
-	MINODE * mip;
+  unsigned long ino, pino;
+  MINODE * mip;
 
-	// No pathname, go to root
-	if(pathname[0] == 0)
-	{ 
-		iput(running->cwd);
-		running->cwd = iget(ROOT_DEV, ROOT_INODE);
+  // No pathname, go to root
+ 
 
-		result = 0;
-	}
-	else
-	{
-		// Get the inode of the pathname into MINODE
-		ino = getino(&dev, pathname);
-		mip = iget(dev, ino);
+  if(pathname[0] == 0){ 
+    iput(running->cwd);
+    running->cwd = iget(ROOT_DEV, ROOT_INODE);
 
-		// Make sure its a DIR
-		if(mip->INODE.i_mode == DIR_MODE)
-		{
+    result = 0;
+  }else if(strcmp(pathname, ".")==0){
+    // Stay here
+    running->cwd = running->cwd;
+  }else if(strcmp(pathname, "..")==0){
+   
+    // We need to find the inode of the parent
+    printDir(running->cwd->ino);
+    findino(running->cwd, &ino, &pino);
+   // printf("ino = %d\npino = %d\n\n", ino, pino);
 
-		}
-		else
-		{
-		  
-		}
-	}
+    mip = iget(dev, pino);
+    iput(running->cwd);
+    running->cwd = mip;
 
-	return result;
-}
+  }else{
+
+  // Get the inode of the pathname into MINODE
+    ino = getino(&dev, pathname);
+    printf("CD -- ino = %d\n", (int)ino);
+    mip = iget(dev, ino);
+
+    // Make sure its a DIR
+    if(mip->INODE.i_mode == DIR_MODE){
+        printf("BEFORE CD:\n");
+        printInode(&running->cwd->INODE);
+        iput(running->cwd);
+        running->cwd = mip;
+
+        printf("AFTER CD:\n");
+        printInode(&running->cwd->INODE);
+
+        result = 0;
+    }else{
+        result = 1;
+        printf("Given pathname is not a directory...\n");
+    }
+
+  }
+    
+    return result;
+  }
   
-int _mkdir(char *pathname)
-{
-	char * parent, * child;
-	char fullpath[128], fullpath2[128];
-	int r;
-	unsigned long ino;
-	MINODE * pip;
+ int _mkdir(char *pathname)
+  {
+    char * parent, * child;
+    char fullpath[128], fullpath2[128];
+    int r;
+    unsigned long ino;
+    MINODE * pip;
+  
+    // Create a copy of the pathname so we don't alter it directly
+    strcpy(fullpath, pathname);
+    strcpy(fullpath2, pathname);
+  
+    printf("~~~~~~MKDIR~~~~~~~\n\n");
+    /*  1. Ask for a pahtname, e.g. /a/b/c  or a/b/c, etc.
+  
+      2.  if (pathname[0] == '/') 
+              dev = root->dev;
+           else)
+		        dev = cwd->dev;
+		3. Let  
+		     parent = dirname(pathname);   parent= "/a/b"
+		     child  = basename(pathname);  child = "c"
 
-	// Create a copy of the pathname so we don't alter it directly
-	strcpy(fullpath, pathname);
-	strcpy(fullpath2, pathname);
+		4. Get the In_MEMORY minode of parent:
 
-	printf("~~~~~~MKDIR~~~~~~~\n\n");
-	/*  1. Ask for a pahtname, e.g. /a/b/c  or a/b/c, etc.
+		         ino  = getino(&dev, parent);
+		         pip  = iget(dev, ino); 
 
-	2.  if (pathname[0] == '/') 
-		  dev = root->dev;
-	   else)
-			dev = cwd->dev;
-	3. Let  
-		 parent = dirname(pathname);   parent= "/a/b"
-		 child  = basename(pathname);  child = "c"
+		   Then, verify :
+		         parent INODE is a DIR AND
+		         child des NOT exists in the parent directory;
+		               
+		5. Call 
+		          r = my_mkdir(pip, child);
+		 
+		6.  return(r);*/
 
-	4. Get the In_MEMORY minode of parent:
+		if(pathname[0] == '/'){
+			//dev = root->dev;
+		}else{
+			//dev = cwd->dev;
+		}
 
-			 ino  = getino(&dev, parent);
-			 pip  = iget(dev, ino); 
+		printf("fullPath: %s\n", fullpath);
+		parent = dirname(fullpath); 
+		child  = basename(fullpath2);
 
-	   Then, verify :
-			 parent INODE is a DIR AND
-			 child des NOT exists in the parent directory;
-				   
-	5. Call 
-			  r = my_mkdir(pip, child);
-	 
-	6.  return(r);*/
+		printf("parent: %s\n", parent);
+		printf("child: %s\n", child);
 
-	if(pathname[0] == '/')
-	{
-		//dev = root->dev;
-	}
-	else
-	{
-		//dev = cwd->dev;
-	}
+		ino = getino(&dev, parent);
 
-	printf("fullPath: %s\n", fullpath);
-	parent = dirname(fullpath); 
-	child  = basename(fullpath2);
+		// Get the MINODE of the parent
+		pip = iget(dev, ino);
+		printInode(&pip->INODE);
 
-	printf("parent: %s\n", parent);
-	printf("child: %s\n", child);
+		printf("i_mode: %x\nDIR_MODE: %x\n", pip->INODE.i_mode, DIR_MODE);
+		if(pip->INODE.i_mode == DIR_MODE){
+			printf("THIS IS A DIRECTORY!\n");
+		}else{
+			printf("THIS IS NOT A DIRECTORY\n");
+		}
 
-	ino = getino(&dev, parent);
-
-	// Get the MINODE of the parent
-	pip = iget(dev, ino);
-	printInode(&pip->INODE);
-
-	printf("i_mode: %x\nDIR_MODE: %x\n", pip->INODE.i_mode, DIR_MODE);
-	if(pip->INODE.i_mode == DIR_MODE)
-	{
-		printf("THIS IS A DIRECTORY!\n");
-	}
-	else
-	{
-		printf("THIS IS NOT A DIRECTORY\n");
-	}
-
-	r = my_mkdir(pip, child);
+		r = my_mkdir(pip, child);
 
 	return 0;
 }
@@ -214,12 +230,16 @@ int _rmdir(char *pathname)
 	return 0;
 }
 
-int _pwd(char *pathname)
+int _pwd()
 {
 	printf("~~~~~~~PWD~~~~~~~~\n\n");
 	
-	
-	
+  if(running->cwd->ino == ROOT_INODE){
+    printf("/");
+  }else{
+	rec_pwd(running->cwd);
+  }
+	printf("\n");
 	return 0;
 }
 
@@ -249,7 +269,76 @@ int __exit(char *pathname)
 	return 0;
 }
 
+int rec_pwd(MINODE *wd){
 
+  /*
+  Write this as a recursive function, which
+
+   1. if wd is already the root:
+         print /; return;
+
+   2. Get parent's MINODE pointer wd; 
+          (HOW? get i_block[0]; then iget(dev, ino of ..))
+      Call pwd(wd) again with parent's MINODE pointer;
+
+   3. Print wd's name followed by a /;
+       (HOW TO get the name string of a MINODE?)
+       You have this guy's ino and its parent's MINODE.
+       Search the parent DIR for an entry with this ino. Then you have its name.
+
+   4. FOR LEVEL-3: If you implement MOUNTing, make sure your recursion can
+                   cross mounting points.
+  */
+
+  unsigned long pino = 0, ino = wd->ino;
+  MINODE * nwd;
+  char buf[BLOCK_SIZE];
+  char name[256];
+  int c = 0;
+
+  if(wd->ino == ROOT_INODE){
+      //printf("");
+  }else{
+
+      get_block(dev, wd->INODE.i_block[0], buf);
+      // Iterate through dir entries to find ..
+      dp = (DIR *)buf;
+      cp = buf; 
+  
+
+      while(cp < buf + BLOCK_SIZE){
+
+        if(c==1){
+          pino = dp->inode;
+          printf("FOUND PARENT - %d\n", pino);
+        }
+        cp += dp->rec_len;            /* advance by rec_len */
+        dp = (DIR *)cp;
+        c++;
+      }
+
+      if(pino == 0){
+        printf("Error finding '..'\n");
+        return -1;
+      }else{
+
+       // getchar();
+        //printDir(pino);
+     
+        nwd = iget(dev, pino);
+      
+        rec_pwd(nwd);
+     
+        findmyname(nwd, ino, &name[0]);
+
+        printf("/%s", name);
+      }
+
+  }
+
+  return 0;
+
+}
 
 
 
@@ -274,8 +363,6 @@ int my_mkdir(MINODE *pip, char *name)
 		//5. call  iput(mip);  
 		//   which should write the new INODE out to disk. 
    
-
-  // C CODE:
   */
 
 	pip->dirty = 1;
@@ -291,7 +378,7 @@ int my_mkdir(MINODE *pip, char *name)
 	MINODE * mip;
 	time_t curTime;
 
-//	char str[64];
+	char str[64];
 
 	dev = pip->dev;
 
@@ -308,7 +395,8 @@ typedef struct Minode
 	ushort   mounted;
 	struct Mount *mountptr;
 	char     name[128];           // name string of file
-} MINODE;
+=======
+  //**********************************************************************
 */
 	mip = iget(dev,inumber);
 
@@ -401,57 +489,72 @@ typedef struct Minode
 */
 	get_block(dev, pip->INODE.i_block[0], buf);
 
-	dp = (DIR *)buf;
-	cp = buf; 
-	printf("end: %s\n", buf + BLOCK_SIZE);
+  dp = (DIR *)buf;
+  cp = buf; 
+  printf("end: %d\n", (int)buf + BLOCK_SIZE);
 
-	while(cp < buf + BLOCK_SIZE  && dp->rec_len != 0)
-	{
-		prev = cp;  
-		cp += dp->rec_len;            /* advance by rec_len */
-		dp = (DIR *)cp;
-	}
+  while(cp < buf + BLOCK_SIZE  && dp->rec_len != 0){
+  	prev = cp;  
+  	cp += dp->rec_len;            /* advance by rec_len */
+  	dp = (DIR *)cp;
+  }
  
-	dp = (DIR *)prev; // dp is the last entry
-	cp = prev;
+  dp = (DIR *)prev; // dp is the last entry
+  cp = prev;
 
-	need_len = 4*((8 + strlen(name) + 3)/4);  // Get needed length for new directory
 
-	ideal_len = 4*((8 + dp->name_len + 3)/4);	  // Get ideal length of the last dir_entry
-	printf("need: %d\n", need_len);
-	printf("ideal: %d\n", ideal_len);
-	printf("cur: %d\n\n", dp->rec_len);
-	
-	if(dp->rec_len - ideal_len >= need_len)
-	{
-		new_len = dp->rec_len - ideal_len;
-		dp->rec_len = ideal_len; // Set the last entry to the ideal length
-		cp += dp->rec_len;	// Move to the end of the last entry
+  
+  need_len = 4*((8 + strlen(name) + 3)/4);  // Get needed length for new directory
 
-		dp = (DIR *)cp;
+  ideal_len = 4*((8 + dp->name_len + 3)/4);	  // Get ideal length of the last dir_entry
+  printf("need: %d\n", need_len);
+  printf("ideal: %d\n", ideal_len);
+  printf("cur: %d\n\n", dp->rec_len);
+  if(dp->rec_len - ideal_len >= need_len){
 
-		dp->inode = inumber;		/* Inode number */
-		strncpy(dp->name, name, strlen(name));    /* File name */
-		dp->name_len = strlen(name);		/* Name length */
-		dp->rec_len = new_len;		/* Directory entry length */
-	}
-	else
-	{ // We need to allocate a new block to store this entry
-		printf("HAHA");
-	}
-	
-	printInode(&pip->INODE);
-	put_block(1, pip->INODE.i_block[0], buf);
+  	new_len = dp->rec_len - ideal_len;
 
-	get_block(0, pip->INODE.i_block[0], buf);
+  	dp->rec_len = ideal_len; // Set the last entry to the ideal length
+
+  	cp += dp->rec_len;	// Move to the end of the last entry
+
+  	dp = (DIR *)cp;
+
+  	dp->inode = inumber;		/* Inode number */
+    strncpy(dp->name, name, strlen(name));    /* File name */
+    dp->name_len = strlen(name);		/* Name length */
+    dp->rec_len = new_len;		/* Directory entry length */
+
+  }else{ // We need to allocate a new block to store this entry
+  		printf("HAHA");
+  }
+
+
+  dp = (DIR *)buf;
+  cp = buf; 
+  printf("end: %u\n", (int)buf + BLOCK_SIZE);
+
+  while(cp < buf + BLOCK_SIZE  && dp->rec_len != 0){
+  	prev = cp;
+  	strncpy(str, dp->name, dp->name_len);
+  	str[dp->name_len] = '\0';
+
+  	printf("name: %s\n", str);
+  	printf("rec_len: %d\n", dp->rec_len);
+  	printf("name_len: %d\n", dp->name_len);
+  	printf("ino: %d\n\n", dp->inode);
+  	cp += dp->rec_len;            /* advance by rec_len */
+  	dp = (DIR *)cp;
+  }
+
+
 
 
   	put_block(1, pip->INODE.i_block[0], buf);
-
 
     time(&curTime);
     pip->INODE.i_atime = curTime;
     iput(pip);
 
-	return 1;
+return 1;
 }

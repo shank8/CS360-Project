@@ -140,6 +140,7 @@ int findmyname(MINODE *parent, unsigned long myino, char *myname);
 int findino(MINODE *mip, unsigned long *myino, unsigned long *parentino);
 void mount_root();
 void printInode(INODE * ip);
+INODE * findInode(int inumber);
 
 // Cmds
 int _menu(char *pathname);
@@ -147,12 +148,15 @@ int _ls(char *pathname);
 int _cd(char *pathname);
 int _mkdir(char *pathname);
 int _rmdir(char *pathname);
-int _pwd(char *pathname);
+int _pwd();
 int _creat0(char *pathname);
 int _rm(char *pathname);
 int __exit(char *pathname);
 
-INODE * findInode(int inumber);
+// Helpers to Cmds
+int rec_pwd(MINODE *wd);
+int my_mkdir(MINODE *pip, char *name);
+
 
 // Alloc/Dealloc functions
 unsigned long ialloc(int dev);
