@@ -160,6 +160,7 @@ int __exit();
 int rec_pwd(MINODE *wd);
 int rec_complete(MINODE *wd);
 int my_mkdir(MINODE *pip, char *name);
+void do_stat(struct stat * mystat, INODE * ino);
 
 
 // Alloc/Dealloc functions

@@ -306,8 +306,8 @@ unsigned long isearch(INODE * inode, char * name)
 			dp->name[dp->name_len] = '\0';
 
 			strcpy(dpname, dp->name);
-			printf("strlen: %d\n", strlen(name));
-			printf("Search: %s\nName: %s\n\n", name, dpname);
+			//printf("strlen: %d\n", strlen(name));
+			//printf("Search: %s\nName: %s\n\n", name, dpname);
 			if (strncmp(name, dpname, strlen(dpname))==0)
 			{
 				result = dp->inode;

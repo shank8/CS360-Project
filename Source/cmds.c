@@ -19,76 +19,97 @@ int _menu()
 int _ls(char *path)
 {
 	MINODE *mp = proc[0].cwd;
+	INODE *inode;
+	struct stat fileStat;
 //	int isRoot = -1;
 	unsigned long ino;
-	char dirName[64];
+	char name[64];
+	char createtime[64];
+	time_t ntime;
+	struct tm * mytm;
 ////////////////////////////////////////////////////////////////////////
 	int i;
 ////////////////////////////////////////////////////////////////////////
 	
 	printf("~~~~~~~~LS~~~~~~~~\n\n");
+		
 	
-	if (strcmp(path, "") == 0)
-	{
-		printf("From CWD:\n");
-	}
-	else
-	{
-		printf("Relative to %s\n", path);
-		/*if (strncmp(path, "/", 1) == 0)
-		{
-			isRoot = 1;
+		if(strcmp(path, "")==0){
+			mp = running->cwd;
+		}else{
+
+			ino = getino(&(mp->dev), path);
+
+			if (ino == 0)
+			{
+				printf("Could Not Find Path: ls()\n");
+				return -1;
+			}
+
+			mp = iget(mp->dev, ino);
 		}
-		else
-			isRoot = 0;*/
-			
-		// set up the directory to be accessed
-		ino = getino((int *)&(mp->dev), path);
-		if (ino == 0)
-		{
-			printf("Could Not Find Path: ls()\n");
-			return -1;
-		}
-//		printf("ino = %lu\n", ino);
-		mp = iget(mp->dev, ino);
-	}
-	
-	// look in the directory, iget(): load the inode into memory (it becomes an minode and increases its refcount by 1)
-	// print out files
-	// iput(): unload the minode
-	
-	// mp points at minode; 
-	// Each data block of mp->INODE contains DIR entries
-	// print the name strings of the DIR entries
-	
-///////////////////////////////////////////////////////////////////////////////////////////////
+		
+
 	for(i = 0; i < 12; i++)
 	{
-		lseek(fd, mp->INODE.i_block[i] * BLOCK_SIZE, 0);
-		read(fd, datablock, BLOCK_SIZE);
+		get_block(dev, mp->INODE.i_block[i], datablock);
+		
 		
 		dp = (DIR *)datablock;
 		cp = datablock;
-		strcpy(dirName, dp->name);
-		dirName[dp->name_len] = '\0';
-		if (strncmp(dp->name, "", dp->name_len) != 0)
-		{
-			printf("Block[%d]:\n", i);
-			printf("name length: %d\n", dp->name_len);
-			printf("Directory name: %s\n", dirName);
-		}
+		
 		
 		while(cp < datablock + BLOCK_SIZE && dp->rec_len != 0)
 		{
+			// Take each inode, get the actual INODE *
+			inode = findInode((int)dp->inode);
+
+			// Now copy the contents into a stat struct
+			do_stat(&fileStat, inode);
+
+		
+			if(S_ISDIR(fileStat.st_mode))
+			{
+				// DIR - display files in the directory
+				printf("d");
+			
+				
+			}else{
+				// Display general info only
+				printf("-");
+			
+			}
+
+			//PERMISSIONS
+			printf( (fileStat.st_mode & S_IRUSR) ? "r" : "-");
+		    printf( (fileStat.st_mode & S_IWUSR) ? "w" : "-");
+		    printf( (fileStat.st_mode & S_IXUSR) ? "x" : "-");
+		    printf( (fileStat.st_mode & S_IRGRP) ? "r" : "-");
+		    printf( (fileStat.st_mode & S_IWGRP) ? "w" : "-");
+		    printf( (fileStat.st_mode & S_IXGRP) ? "x" : "-");
+		    printf( (fileStat.st_mode & S_IROTH) ? "r" : "-");
+		    printf( (fileStat.st_mode & S_IWOTH) ? "w" : "-");
+		    printf( (fileStat.st_mode & S_IXOTH) ? "x" : "-");
+
+		    //UID
+		    printf(" %d ", fileStat.st_uid);
+
+		    //SIZE
+		    printf(" %*d ", 8, fileStat.st_size);
+
+		    //CREATION TIME
+
+		    ntime = (time_t)fileStat.st_ctime;
+		    mytm = localtime(&ntime);
+		    strftime(createtime, 256, "%b %d %R", mytm);
+
+		    printf(" %s ", createtime);
+
+		    strncpy(name, dp->name, dp->name_len);
+		    name[dp->name_len] = '\0';
+		    printf(" %s\n", name);
 			cp += dp->rec_len;			// advance cp by rlen in bytes
 			dp = (DIR *)cp;				// pull dp to the next record
-			strcpy(dirName, dp->name);
-			dirName[dp->name_len] = '\0';
-			if (strncmp(dp->name, "", dp->name_len) != 0)
-			{
-				printf("name length: %d\n", dp->name_len);
-				printf("Directory name: %s\n", dirName);
-			}
         }
 	}
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -322,18 +343,7 @@ int _stat(char *pathname){
       printf("middle:%s\n", pathname);
      mip = iget(dev, ino);
 
-	  mystat.st_dev = dev;
-	  mystat.st_ino = ino;
-	  mystat.st_mode = mip->INODE.i_mode;
-	  mystat.st_nlink = mip->INODE.i_links_count;
-	  mystat.st_uid = mip->INODE.i_uid;
-	  mystat.st_gid = mip->INODE.i_gid;
-	  mystat.st_size = mip->INODE.i_size;
-	  mystat.st_blksize = BLOCK_SIZE;
-	  mystat.st_blocks = mip->INODE.i_blocks;
-	  mystat.st_atime = mip->INODE.i_atime;
-	  mystat.st_ctime = mip->INODE.i_ctime;
-	  mystat.st_mtime = mip->INODE.i_mtime;
+	  do_stat(&mystat, &mip->INODE);
 
 	  printf("after:%s\n", pathname);
 	  printf("---- stat - %s ----\n\n", basename(pathname));
@@ -366,6 +376,22 @@ int _stat(char *pathname){
       iput(mip);
 	return 0;
 }
+
+void do_stat(struct stat * mystat, INODE * ino){
+	  mystat->st_dev = dev;
+	  mystat->st_ino = ino;
+	  mystat->st_mode = ino->i_mode;
+	  mystat->st_nlink = ino->i_links_count;
+	  mystat->st_uid = ino->i_uid;
+	  mystat->st_gid = ino->i_gid;
+	  mystat->st_size = ino->i_size;
+	  mystat->st_blksize = BLOCK_SIZE;
+	  mystat->st_blocks = ino->i_blocks;
+	  mystat->st_atime = ino->i_atime;
+	  mystat->st_ctime = ino->i_ctime;
+	  mystat->st_mtime = ino->i_mtime;
+}
+
 int __exit()
 {
 	printf("~~~~~QUITTING~~~~~\n\n");

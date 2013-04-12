@@ -21,3 +21,5 @@ Mon Apr  8 14:43:55 PDT 2013 - Fixed this log.sh script
 
 Mon Apr  8 14:44:08 PDT 2013 - Pushed to cd branchFri Apr 12 13:36:40 PDT 2013 - Added stat function and fixed some parsing problems
 
+Fri Apr 12 14:35:09 PDT 2013 - Just finished ls command
+

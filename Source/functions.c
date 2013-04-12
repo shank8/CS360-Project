@@ -255,3 +255,32 @@ void printDir(unsigned long ino){
         dp = (DIR *)cp;
       }
 }
+void compPath(char * path){
+
+	strcpy(completePath, "");
+
+	if(path[0] == '/'){
+		strcpy(completePath, path);
+		return;
+	}else if(strcmp(path, ".")==0){
+		return;
+	}else if(strcmp(path, "..")==0){
+		return;
+	}else{
+		//strcat(completePath, "/");
+
+		if(running->cwd->ino == ROOT_INODE){
+			strcat(completePath, "");
+		}else{
+			rec_complete(running->cwd);
+		}
+		strcat(completePath, "/");
+		strcat(completePath, path);
+		
+
+	}
+	printf("Complete Path: %s\n", completePath);
+
+	return;
+
+}
