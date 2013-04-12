@@ -7,6 +7,8 @@ char device[64], pathname[128];
 char block[BLOCK_SIZE], datablock[BLOCK_SIZE];
 char name[128][128];
 
+char completePath[256];
+
 int fd, n;	// file descriptor, number of names in path
 
 SUPER *sb;

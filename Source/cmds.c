@@ -7,7 +7,7 @@
 ////////////////////////////////////////////////////////
 
 
-int _menu(char *pathname)
+int _menu()
 {
 	printf("~~~~~~~MENU~~~~~~~\n\n");
 	
@@ -260,8 +260,113 @@ int _rm(char *pathname)
 	
 	return 0;
 }
+int _stat(char *pathname){
 
-int __exit(char *pathname)
+	/*
+	1. Get inode of pathname into an MINODE:
+         ino = getino(&dev, pathname); // Use YOUR showBlock program; ino > 0
+         mip = iget(dev, ino);         // iget() returns a pointer to minode[]
+         
+  3. Copy entries of INODE into stat struct;
+
+     As you can see, everything needed by the stat struct is in minode.INODE
+     Write C statements to copy from mip->INODE to stPtr->fields.
+
+       struct ext2_inode {
+	i_mode;		/* File mode 
+	i_uid;		/* Owner Uid
+	i_size;		/* Size in bytes 
+	i_atime;	/* Access time 
+	i_ctime;	/* Creation time 
+	i_mtime;	/* Modification time 
+	i_dtime;	/* Deletion Time 
+	i_gid;		/* Group Id 
+	i_links_count;	/* Links count 
+	i_blocks;	/* Blocks count 
+        .................................
+        i_block[15];    // Allocated disk blocks 
+      }
+
+	 
+
+      struct stat {
+        st_dev;      // dev
+        st_ino;      // ino
+
+        st_mode;     // i_mode
+        st_nlink;    // i_links_count
+        st_uid;      // i_uid
+        st_gid;      // i_gid
+        st_rdev;     // IGNORE THIS
+        st_size;     // i_size
+        st_blksize;  // 1024
+        st_blocks;   // i_blocks
+        st_atime;    // i_atime
+        st_mtime;    // i_mtime
+        st_ctime;    // i_ctime
+      };
+
+  4. Print the entries of the stat struct;
+  5. iput(mip);      // dispose of minode; see NOTE below.
+     return 0 for success;
+     */
+
+     struct stat mystat;
+     unsigned long ino;
+     MINODE * mip;
+   
+
+  printf("before:%s\n", pathname);
+
+     ino = getino(&dev, pathname);
+      printf("middle:%s\n", pathname);
+     mip = iget(dev, ino);
+
+	  mystat.st_dev = dev;
+	  mystat.st_ino = ino;
+	  mystat.st_mode = mip->INODE.i_mode;
+	  mystat.st_nlink = mip->INODE.i_links_count;
+	  mystat.st_uid = mip->INODE.i_uid;
+	  mystat.st_gid = mip->INODE.i_gid;
+	  mystat.st_size = mip->INODE.i_size;
+	  mystat.st_blksize = BLOCK_SIZE;
+	  mystat.st_blocks = mip->INODE.i_blocks;
+	  mystat.st_atime = mip->INODE.i_atime;
+	  mystat.st_ctime = mip->INODE.i_ctime;
+	  mystat.st_mtime = mip->INODE.i_mtime;
+
+	  printf("after:%s\n", pathname);
+	  printf("---- stat - %s ----\n\n", basename(pathname));
+	  printf("Device: %d\n", mystat.st_dev);
+	  printf("Inode: %d\n", mystat.st_ino);
+	  printf("Permissions: ");
+
+	  printf( (mystat.st_mode & S_IRUSR) ? "r" : "-");
+      printf( (mystat.st_mode & S_IWUSR) ? "w" : "-");
+      printf( (mystat.st_mode & S_IXUSR) ? "x" : "-");
+      printf( (mystat.st_mode & S_IRGRP) ? "r" : "-");
+      printf( (mystat.st_mode & S_IWGRP) ? "w" : "-");
+      printf( (mystat.st_mode & S_IXGRP) ? "x" : "-");
+      printf( (mystat.st_mode & S_IROTH) ? "r" : "-");
+      printf( (mystat.st_mode & S_IWOTH) ? "w" : "-");
+      printf( (mystat.st_mode & S_IXOTH) ? "x" : "-");
+      printf("\n");
+
+      printf("Links: %d\n", mystat.st_nlink);
+      printf("UID: %d\n", mystat.st_uid);
+      printf("GID: %d\n", mystat.st_gid);
+      printf("Size: %d\n", mystat.st_size);
+      printf("Blocksize: %d\n", mystat.st_blksize);
+      printf("# of Blocks: %d\n", mystat.st_blocks);
+      printf("aTime: %s", ctime(&mystat.st_atime));
+      printf("cTime: %s", ctime(&mystat.st_ctime));
+      printf("mTime: %s", ctime(&mystat.st_mtime));
+      printf("\n");
+
+      iput(mip);
+	return 0;
+}
+int __exit()
 {
 	printf("~~~~~QUITTING~~~~~\n\n");
 	quit();
@@ -340,6 +445,80 @@ int rec_pwd(MINODE *wd){
 
 }
 
+int rec_complete(MINODE *wd){
+
+  /*
+  Write this as a recursive function, which
+
+   1. if wd is already the root:
+         print /; return;
+
+   2. Get parent's MINODE pointer wd; 
+          (HOW? get i_block[0]; then iget(dev, ino of ..))
+      Call pwd(wd) again with parent's MINODE pointer;
+
+   3. Print wd's name followed by a /;
+       (HOW TO get the name string of a MINODE?)
+       You have this guy's ino and its parent's MINODE.
+       Search the parent DIR for an entry with this ino. Then you have its name.
+
+   4. FOR LEVEL-3: If you implement MOUNTing, make sure your recursion can
+                   cross mounting points.
+  */
+
+  unsigned long pino = 0, ino = wd->ino;
+  MINODE * nwd;
+  char buf[BLOCK_SIZE];
+  char name[256];
+  int c = 0;
+
+  if(wd->ino == ROOT_INODE){
+ 		
+  }else{
+
+      get_block(dev, wd->INODE.i_block[0], buf);
+      // Iterate through dir entries to find ..
+      dp = (DIR *)buf;
+      cp = buf; 
+  
+
+      while(cp < buf + BLOCK_SIZE){
+
+        if(c==1){
+          pino = dp->inode;
+        }
+
+        cp += dp->rec_len;            /* advance by rec_len */
+        dp = (DIR *)cp;
+        c++;
+      }
+
+      if(pino == 0){
+        printf("Error finding '..'\n");
+        return -1;
+      }else{
+
+       // getchar();
+        //printDir(pino);
+     
+        nwd = iget(dev, pino);
+      
+        rec_pwd(nwd);
+     
+        findmyname(nwd, ino, &name[0]);
+
+       
+
+        strcat(completePath, "/");
+        strcat(completePath, name);
+       
+      }
+
+  }
+
+  return 0;
+
+}
 
 
 int my_mkdir(MINODE *pip, char *name)

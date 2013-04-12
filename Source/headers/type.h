@@ -49,6 +49,7 @@ typedef struct ext2_dir_entry_2	DIR;    // need this for new version of e2fs
 #define NOFT				50
 
 #define ROOT_DEV          0
+#define NUM_COMMANDS 10
 
 // Open File Table
 typedef struct Oft{
@@ -104,6 +105,7 @@ extern MINODE	*root;	//====>   from here on, / means minode[0].
 extern char	device[64], pathname[128];
 extern char	block[BLOCK_SIZE], datablock[BLOCK_SIZE];
 extern char	name [128][128];
+extern char completePath[256];
 
 extern int fd, n;	// file descriptor, number of names in path
 
@@ -141,9 +143,10 @@ int findino(MINODE *mip, unsigned long *myino, unsigned long *parentino);
 void mount_root();
 void printInode(INODE * ip);
 INODE * findInode(int inumber);
+void compPath(char * path);
 
 // Cmds
-int _menu(char *pathname);
+int _menu();
 int _ls(char *pathname);
 int _cd(char *pathname);
 int _mkdir(char *pathname);
@@ -151,10 +154,11 @@ int _rmdir(char *pathname);
 int _pwd();
 int _creat0(char *pathname);
 int _rm(char *pathname);
-int __exit(char *pathname);
+int __exit();
 
 // Helpers to Cmds
 int rec_pwd(MINODE *wd);
+int rec_complete(MINODE *wd);
 int my_mkdir(MINODE *pip, char *name);
 
 

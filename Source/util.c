@@ -55,9 +55,12 @@ unsigned long getino(int *dev, char *pathname)
 	unsigned long inumber = 0;
 	INODE * next = &root->INODE;
 
+	char copy[256];
+
+	strcpy(copy, pathname);
 	
 
-	tok = strtok(pathname, "/");
+	tok = strtok(copy, "/");
 	if(tok==NULL)
 	{
 		inumber = minode[0].ino; // If tok is NULL then the pathname is just '/', therefore the inumber is the root ino or 2
@@ -381,24 +384,14 @@ void parseString(char *input, char *command, char *pathname)
 
 int findCommand(char *command)
 {
-	if ( (strncmp(command, "menu", 4) == 0) || (strncmp(command, "help", 4) == 0) )
-		return 0;
-	if (strncmp(command, "ls", 2) == 0)
-		return 1;
-	if (strncmp(command, "cd", 2) == 0)
-		return 2;
-	if (strncmp(command, "mkdir", 5) == 0)
-		return 3;
-	if (strncmp(command, "rmdir", 5) == 0)
-		return 4;
-	if (strncmp(command, "pwd", 3) == 0)
-		return 5;
-	if (strncmp(command, "creat", 5) == 0)
-		return 6;
-	if (strncmp(command, "rm", 2) == 0)
-		return 7;
-	if ( (strncmp(command, "quit", 4) == 0) || (strncmp(command, "exit", 4) == 0) )
-		return 8;
+	char * cmdList[NUM_COMMANDS] = {"help", "ls", "cd", "mkdir", "rmdir", "pwd", "creat", "rm", "stat", "quit"};
+
+	int i = 0;
+	for(i=0;i<NUM_COMMANDS;i++){
+		if(strncmp(cmdList[i], command, strlen(cmdList[i]))==0){
+			return i;
+		}
+	}
 		
 	return -1;
 }
