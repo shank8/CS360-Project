@@ -7,6 +7,8 @@ char device[64], pathname[128];
 char block[BLOCK_SIZE], datablock[BLOCK_SIZE];
 char name[128][128];
 
+char completePath[256];
+
 int fd, n;	// file descriptor, number of names in path
 
 SUPER *sb;
@@ -217,5 +219,79 @@ void mount_root()
 
 	printf("WE GOT ROOT MAN!!!\n");
 	
+	return;
+}
+
+void printDir(unsigned long ino)
+{
+
+	/*struct ext2_dir_entry_2 {
+		__u32	inode;			// Inode number 
+		__u16	rec_len;		// Directory entry length 
+		__u8	name_len;		// Name length 
+		__u8	file_type;
+		char	name[EXT2_NAME_LEN];	// File name 
+	};*/
+
+	char buf[BLOCK_SIZE];
+	char name[256];
+	INODE * inode;
+
+	inode = findInode(ino);
+	get_block(dev, inode->i_block[0], buf);
+	// Iterate through dir entries to find ..
+	dp = (DIR *)buf;
+	cp = buf; 
+
+
+	printf("---- DIR ENTRIES ----\n");
+	while(cp < buf + BLOCK_SIZE)
+	{
+		strncpy(name, dp->name, dp->name_len);
+		name[dp->name_len] = '\0';
+
+		printf("inode: %d\n", (int)dp->inode);
+		printf("name: %s\n\n", name);
+		cp += dp->rec_len;            /* advance by rec_len */
+		dp = (DIR *)cp;
+	}
+	
+	return;
+}
+
+void compPath(char * path)
+{
+	strcpy(completePath, "");
+
+	if(path[0] == '/')
+	{
+		strcpy(completePath, path);
+		return;
+	}
+	else if(strcmp(path, ".")==0)
+	{
+		return;
+	}
+	else if(strcmp(path, "..")==0)
+	{
+		return;
+	}
+	else
+	{
+		//strcat(completePath, "/");
+
+		if(running->cwd->ino == ROOT_INODE)
+		{
+			strcat(completePath, "");
+		}
+		else
+		{
+			rec_complete(running->cwd);
+		}
+		strcat(completePath, "/");
+		strcat(completePath, path);
+	}
+	printf("Complete Path: %s\n", completePath);
+
 	return;
 }

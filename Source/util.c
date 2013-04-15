@@ -55,9 +55,12 @@ unsigned long getino(int *dev, char *pathname)
 	unsigned long inumber = 0;
 	INODE * next = &root->INODE;
 
+	char copy[256];
+
+	strcpy(copy, pathname);
 	
 
-	tok = strtok(pathname, "/");
+	tok = strtok(copy, "/");
 	if(tok==NULL)
 	{
 		inumber = minode[0].ino; // If tok is NULL then the pathname is just '/', therefore the inumber is the root ino or 2
@@ -112,7 +115,7 @@ MINODE *iget(int dev, unsigned long ino)
 
 	INODE *tmpInode = findInode(ino);
 		
-	printInode(tmpInode);
+	//printInode(tmpInode);
 
 	int i;
 	int freeINode = -1; // location of first free MINODE
@@ -191,7 +194,6 @@ void iput(MINODE *mip)
  //   and write the block back to disk.
  // **just for simplicity, every time you close, print the reference count
  ////////////////////////////////////////////////////////////////////////////////
-	printf("test\n\n");
 	return;
 }
 
@@ -222,15 +224,18 @@ int findmyname(MINODE *parent, unsigned long myino, char *myname)
 		{
 //			k = 0;
 
-			dp->name[dp->name_len] = '\0';
+			strncpy(dpname, dp->name, dp->name_len);
+			dpname[dp->name_len] = '\0';
 
-			strcpy(dpname, dp->name);
-
-			printf("Search: %s\nName: %s\n\n", (char *)name, (char *)dpname);
+			//printf("Search Ino: %d\nName: %d\n\n", (int)myino, (int)dp->inode);
 			if (myino == dp->inode) // Found inode
 			{
-				result = 1;
-				myname = (char*)(&dp->name);
+				result = 0;
+				strcpy(myname, dpname);
+				//printf("FOUND THE NAME!!!\n");
+			
+				break;
+				
 			}
 
 			cp += dp->rec_len;         // advance cp by rlen in bytes
@@ -246,27 +251,29 @@ int findino(MINODE *mip, unsigned long *myino, unsigned long *parentino)
 {
 	int result = 0;
 	char dpname[256];
+	char datablock[BLOCK_SIZE];
 //  For a DIR Minode, extract the inumbers of . and .. 
 //  Read in 0th data block. The inumbers are in the first two dir entries.
 
-	get_block(dev, mip->INODE.i_block[0], block);
+	get_block(dev, mip->INODE.i_block[0], datablock);
 	dp = (DIR *)datablock;
 	cp = datablock;
 
-	while (cp < datablock + BLOCK_SIZE && dp->rec_len != 0)
+	while (cp < datablock + BLOCK_SIZE)
 	{
-		dp->name[dp->name_len] = '\0';
+		
 
-		strcpy(dpname, dp->name);
-
-		printf("Search: %s\nName: %s\n\n", (char*)name, (char *)dpname);
-
+		strncpy(dpname, dp->name, dp->name_len);
+		dpname[dp->name_len] = '\0';
+	
 		if (strcmp(".", dpname)==0) // Set myino to dp->inode
 		{
+			//printf("found myino: %d\n", (int)dp->inode);
 			*myino = dp->inode;
 		}
 		else if (strcmp("..", dpname)==0)
 		{
+			//printf("found pino: %d\n", (int)dp->inode);
 			*parentino = dp->inode;
 			result = 1;
 			break;
@@ -299,11 +306,10 @@ unsigned long isearch(INODE * inode, char * name)
 			dp->name[dp->name_len] = '\0';
 
 			strcpy(dpname, dp->name);
-			printf("strlen: %d", strlen(name));
-			printf("Search: %s\nName: %s\n\n", name, dpname);
+			//printf("strlen: %d\n", strlen(name));
+			//printf("Search: %s\nName: %s\n\n", name, dpname);
 			if (strncmp(name, dpname, strlen(dpname))==0)
 			{
-				printf("ladjflasdfj");
 				result = dp->inode;
 				return result;
 			}
@@ -378,28 +384,19 @@ void parseString(char *input, char *command, char *pathname)
 
 int findCommand(char *command)
 {
-	if ( (strncmp(command, "menu", 4) == 0) || (strncmp(command, "help", 4) == 0) )
-		return 0;
-	if (strncmp(command, "ls", 2) == 0)
-		return 1;
-	if (strncmp(command, "cd", 2) == 0)
-		return 2;
-	if (strncmp(command, "mkdir", 5) == 0)
-		return 3;
-	if (strncmp(command, "rmdir", 5) == 0)
-		return 4;
-	if (strncmp(command, "pwd", 3) == 0)
-		return 5;
-	if (strncmp(command, "creat", 5) == 0)
-		return 6;
-	if (strncmp(command, "rm", 2) == 0)
-		return 7;
-	if ( (strncmp(command, "quit", 4) == 0) || (strncmp(command, "exit", 4) == 0) )
-		return 8;
+	char * cmdList[NUM_COMMANDS] = {"help", "ls", "cd", "mkdir", "rmdir", "pwd", "creat", "rm", "stat", "quit"};
+
+	int i = 0;
+	for(i=0;i<NUM_COMMANDS;i++)
+	{
+		if(strncmp(cmdList[i], command, strlen(cmdList[i]))==0)
+		{
+			return i;
+		}
+	}
 		
 	return -1;
 }
-
 
 void printInode(INODE * ip)
 {
@@ -417,7 +414,7 @@ void printInode(INODE * ip)
 	return;
 }
 
-int do_stat(char *pathname, struct stat *stPtr)
+int do_stat2(char *pathname, struct stat *stPtr)
 {
 	int ino;
 //	int i;
@@ -466,12 +463,12 @@ int do_stat(char *pathname, struct stat *stPtr)
 	stPtr->st_ctime = mip->INODE.i_ctime;
 	
 	/* 4. Print the entries of the stat struct; */
-	TODO
+//	TODO
 	
 	
 	/* 5. iput(mip);      // dispose of minode; see NOTE below.
-	 return 0 for success; */
-	 iput(mip);		// dispose of minode
-	 
-	 return 0;
+	return 0 for success; */
+	iput(mip);		// dispose of minode
+
+	return 0;
 }
