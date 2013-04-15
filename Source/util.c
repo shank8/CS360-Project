@@ -416,3 +416,62 @@ void printInode(INODE * ip)
 	printf("\n");
 	return;
 }
+
+int do_stat(char *pathname, struct stat *stPtr)
+{
+	int ino;
+//	int i;
+	MINODE *mip;
+	/* 1. Get inode of pathname into an MINODE:
+		 ino = getino(&dev, pathname); // Use YOUR showBlock program; ino > 0
+		 mip = iget(dev, ino);         // iget() returns a pointer to minode[]*/
+	ino = getino(&dev, pathname);
+	mip = iget(dev, ino);
+	
+	/* 3. Copy entries of INODE into stat struct;
+	 As you can see, everything needed by the stat struct is in minode.INODE
+	 Write C statements to copy from mip->INODE to stPtr->fields.
+
+	   struct ext2_inode {
+	i_mode;		// File mode, i_uid;		// Owner Uid
+	i_size;		// Size in bytes, i_atime;	// Access time
+	i_ctime;	// Creation time, i_mtime;	// Modification time
+	i_dtime;	// Deletion Time, i_gid;		// Group Id
+	i_links_count;	// Links count, i_blocks;	// Blocks count
+		.................................
+		i_block[15];    // Allocated disk blocks 
+	  }
+	
+	struct stat {
+		st_dev;      // dev, st_ino;      // ino
+		st_mode;     // i_mode, st_nlink;    // i_links_count
+		st_uid;      // i_uid, st_gid;      // i_gid
+		st_rdev;     // IGNORE THIS, st_size;     // i_size
+		st_blksize;  // 1024, st_blocks;   // i_blocks
+		st_atime;    // i_atime, st_mtime;    // i_mtime
+		st_ctime;    // i_ctime
+	  }; */
+	
+	stPtr->st_dev = dev;
+	stPtr->st_ino = ino;
+	stPtr->st_mode = mip->INODE.i_mode;
+	stPtr->st_nlink = mip->INODE.i_links_count;
+	stPtr->st_uid = mip->INODE.i_uid;
+	stPtr->st_gid = mip->INODE.i_gid;
+	stPtr->st_size = mip->INODE.i_size;
+	stPtr->st_blksize = BLOCK_SIZE;
+	stPtr->st_blocks = mip->INODE.i_blocks;
+	stPtr->st_atime = mip->INODE.i_atime;
+	stPtr->st_mtime = mip->INODE.i_mtime;
+	stPtr->st_ctime = mip->INODE.i_ctime;
+	
+	/* 4. Print the entries of the stat struct; */
+	TODO
+	
+	
+	/* 5. iput(mip);      // dispose of minode; see NOTE below.
+	 return 0 for success; */
+	 iput(mip);		// dispose of minode
+	 
+	 return 0;
+}

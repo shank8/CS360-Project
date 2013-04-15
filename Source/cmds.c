@@ -18,13 +18,14 @@ int _menu(char *pathname)
 
 int _ls(char *path)
 {
+	struct stat mystat;
+	int r;
 	MINODE *mp = proc[0].cwd;
-//	int isRoot = -1;
 	unsigned long ino;
 	char dirName[64];
-////////////////////////////////////////////////////////////////////////
 	int i;
-////////////////////////////////////////////////////////////////////////
+	
+	r = do_stat(path, &mystat);
 	
 	printf("~~~~~~~~LS~~~~~~~~\n\n");
 	
@@ -35,12 +36,6 @@ int _ls(char *path)
 	else
 	{
 		printf("Relative to %s\n", path);
-		/*if (strncmp(path, "/", 1) == 0)
-		{
-			isRoot = 1;
-		}
-		else
-			isRoot = 0;*/
 			
 		// set up the directory to be accessed
 		ino = getino((int *)&(mp->dev), path);
@@ -60,8 +55,7 @@ int _ls(char *path)
 	// mp points at minode; 
 	// Each data block of mp->INODE contains DIR entries
 	// print the name strings of the DIR entries
-	
-///////////////////////////////////////////////////////////////////////////////////////////////
+
 	for(i = 0; i < 12; i++)
 	{
 		lseek(fd, mp->INODE.i_block[i] * BLOCK_SIZE, 0);
@@ -91,7 +85,6 @@ int _ls(char *path)
 			}
         }
 	}
-///////////////////////////////////////////////////////////////////////////////////////////////
 	
 	return 0;
 }
