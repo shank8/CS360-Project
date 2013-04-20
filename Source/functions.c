@@ -25,9 +25,12 @@ int dev = 0; // 0 is main device
 
 __u32 iNodeBeginBlock;
 
-MINODE *new_MINODE(INODE * inode, unsigned long ino, int minodeLoc, int dev)
+MINODE *new_MINODE(INODE *inode, unsigned long ino, int minodeLoc, int dev)
 {
-	memcpy(&(minode[minodeLoc].INODE), inode, sizeof(INODE)); // This should copy the inode
+//	if (inode != NULL)
+		memcpy(&(minode[minodeLoc].INODE), inode, sizeof(INODE)); // This should copy the inode
+//	else
+//		minode[minodeLoc].INODE = NULL;
 
 	minode[minodeLoc].dev = dev;
 	minode[minodeLoc].ino = ino;
@@ -261,7 +264,8 @@ void printDir(unsigned long ino)
 
 void compPath(char * path)
 {
-	strcpy(completePath, "");
+//	strcpy(completePath, "");
+//	strcpy(name[0], "");
 
 	if(path[0] == '/')
 	{
@@ -270,26 +274,33 @@ void compPath(char * path)
 	}
 	else if(strcmp(path, ".")==0)
 	{
+		strcpy(completePath, ".");
 		return;
 	}
 	else if(strcmp(path, "..")==0)
 	{
+		strcpy(completePath, "..");
 		return;
 	}
-	else
+	else // path[0] != '/'
 	{
+//printf("path[0] != '/'\n");
 		//strcat(completePath, "/");
-
+printf("running->cwd->ino = %lu, running->cwd->INODE.i_block[0] = %d\n", running->cwd->ino, running->cwd->INODE.i_block[0]);
 		if(running->cwd->ino == ROOT_INODE)
 		{
-			strcat(completePath, "");
+printf("running->cwd->ino == ROOT_INODE\n");
 		}
 		else
 		{
+printf("running->cwd->ino != ROOT_INODE\n");
 			rec_complete(running->cwd);
 		}
-		strcat(completePath, "/");
-		strcat(completePath, path);
+		if (strcmp(path, "")!=0)
+		{
+			strcat(completePath, "/");
+			strcat(completePath, path);
+		}
 	}
 	printf("Complete Path: %s\n", completePath);
 

@@ -51,18 +51,18 @@ unsigned long getino(int *dev, char *pathname)
 	// A: it has to do with what device we are working with
 	//    (for Tier III we will have to specify which device)
 
-	char * tok;
+	char *tok;
 	unsigned long inumber = 0;
-	INODE * next = &root->INODE;
+	INODE *next = &root->INODE;
 
 	char copy[256];
 
 	strcpy(copy, pathname);
-	
 
 	tok = strtok(copy, "/");
 	if(tok==NULL)
 	{
+		printf("first tok is NULL\n");
 		inumber = minode[0].ino; // If tok is NULL then the pathname is just '/', therefore the inumber is the root ino or 2
 	}
 	else
@@ -94,6 +94,7 @@ unsigned long search(MINODE *mip, char *name)
 	unsigned long inumber = 0;
 //   This function searches the data blocks of a DIR inode (inside an Minode[])
 //   for name. You may assume DIRECT data blocks only.
+printf("search() name = %s\n", name);
 	inumber = isearch(&mip->INODE, name);
 
 	return inumber;
@@ -112,10 +113,9 @@ unsigned long search(MINODE *mip, char *name)
 MINODE *iget(int dev, unsigned long ino)
 {
 	MINODE *tmpMINode;
-
 	INODE *tmpInode = findInode(ino);
 		
-	//printInode(tmpInode);
+//printInode(tmpInode);
 
 	int i;
 	int freeINode = -1; // location of first free MINODE
@@ -150,15 +150,15 @@ MINODE *iget(int dev, unsigned long ino)
 
 void iput(MINODE *mip)
 {
-//	int dev = 0,
 	int ino;
-	INODE * inode = NULL;
+	INODE *inode = NULL;
+	char datablock[BLOCK_SIZE];
 
 	mip->refCount--;
-	printf("name: %s\n", mip->name);
-	printf("refCount: %d\n", mip->refCount);
-	printf("dirty: %d\n", mip->dirty);
-	printf("ino: %lu\n", mip->ino);
+	printf("\tMinode name: %s\n", mip->name);
+	printf("\trefCount: %d\n", mip->refCount);
+	printf("\tdirty: %d\n", mip->dirty);
+	printf("\tino: %lu\n", mip->ino);
 	if (mip->refCount > 0)
 		return;
 	else if (mip->dirty == 0)
@@ -171,14 +171,15 @@ void iput(MINODE *mip)
 		//TODO: Read in from the device that we need to write to
 	}
 //  else: currently loaded device is the device we're writing to
-
+	
 	// Get inode number and address of inode
+	get_block(dev, mip->INODE.i_block[0], datablock);
 	ino = mip->ino;
 	inode = findInode(ino);
-
+printf("iput(): mip->INODE.i_size = %d, mip->INODE.i_mode = %x,\nmip->INODE.i_block[0] = %d\n", mip->INODE.i_size, mip->INODE.i_mode, mip->INODE.i_block[0]);
 
 	// Copy the contents of the MINODE into the location in disk
-	memcpy(inode, &(mip->INODE), sizeof(INODE));
+	put_block(dev, mip->INODE.i_block[0], datablock);//memcpy(inode, &(mip->INODE), sizeof(INODE));
  ///////////////////////////////////////////////////////////////////////////////
  //  This function releases a Minode[]. Since an Minode[]'s refCount indicates
  //  the number of users on this Minode[], releasing is done as follows:
@@ -207,10 +208,9 @@ int findmyname(MINODE *parent, unsigned long myino, char *myname)
 	// we are searching for an inode and returning a name
 
 	int i = 0;
-//	int k = 0; // do we need the variable k?
 	char dpname[256];
 	int result = 0;
-	INODE * inode = &(parent->INODE);
+	INODE *inode = &(parent->INODE);
 
 	while(i < 12)
 	{
@@ -222,8 +222,6 @@ int findmyname(MINODE *parent, unsigned long myino, char *myname)
 
 		while(cp < datablock + BLOCK_SIZE && dp->rec_len != 0)
 		{
-//			k = 0;
-
 			strncpy(dpname, dp->name, dp->name_len);
 			dpname[dp->name_len] = '\0';
 
@@ -231,11 +229,13 @@ int findmyname(MINODE *parent, unsigned long myino, char *myname)
 			if (myino == dp->inode) // Found inode
 			{
 				result = 0;
-				strcpy(myname, dpname);
-				//printf("FOUND THE NAME!!!\n");
+				strcat(myname, "/");
+				strcat(myname, dpname);
+//				strcpy(myname, dpname);
+
+printf("Test findmyname(): name[0] = %s\n", name[0]);
 			
-				break;
-				
+				return 0;//break;
 			}
 
 			cp += dp->rec_len;         // advance cp by rlen in bytes
@@ -286,7 +286,7 @@ int findino(MINODE *mip, unsigned long *myino, unsigned long *parentino)
 	return result;
 }
 
-unsigned long isearch(INODE * inode, char * name)
+unsigned long isearch(INODE *inode, char *name)
 {
 	int i = 0;
 	char dpname[256];
@@ -302,12 +302,15 @@ unsigned long isearch(INODE * inode, char * name)
 
 		while(cp < datablock + BLOCK_SIZE && dp->rec_len != 0)
 		{
+//			dp->name[dp->name_len] = '\0';
+//			strcpy(dpname, dp->name);
 
-			dp->name[dp->name_len] = '\0';
-
-			strcpy(dpname, dp->name);
-			//printf("strlen: %d\n", strlen(name));
-			//printf("Search: %s\nName: %s\n\n", name, dpname);
+			strncpy(dpname, dp->name, dp->name_len);
+			dpname[dp->name_len] = '\0';
+			printf("dpname = %s, length = %d\n", dpname, strlen(dpname));
+			
+//printf("strlen: %d\n", strlen(name));
+//printf("Search: %s\nName: %s\n\n", name, dpname);
 			if (strncmp(name, dpname, strlen(dpname))==0)
 			{
 				result = dp->inode;
@@ -326,7 +329,7 @@ unsigned long isearch(INODE * inode, char * name)
 INODE *findInode(int inumber)
 {
 	int nblock, num;
-	INODE * ino = NULL;
+	INODE *ino = NULL;
 
 	nblock = iNodeBeginBlock + ((inumber - 1) / 8);
 	num = ((inumber-1) % 8);
@@ -384,7 +387,7 @@ void parseString(char *input, char *command, char *pathname)
 
 int findCommand(char *command)
 {
-	char * cmdList[NUM_COMMANDS] = {"help", "ls", "cd", "mkdir", "rmdir", "pwd", "creat", "rm", "stat", "quit"};
+	char *cmdList[NUM_COMMANDS] = {"help", "ls", "cd", "mkdir", "rmdir", "pwd", "creat", "rm", "stat", "quit"};
 
 	int i = 0;
 	for(i=0;i<NUM_COMMANDS;i++)
@@ -402,7 +405,7 @@ void printInode(INODE * ip)
 {
 	int k;
 
-	printf("Mode: %u\n", ip->i_mode);
+	printf("Mode: %x\n", ip->i_mode);
 	printf("UID: %u\n", ip->i_uid);
 	printf("Size: %u\n", ip->i_size);
 

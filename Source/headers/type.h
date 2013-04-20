@@ -105,9 +105,9 @@ extern MINODE	*root;	//====>   from here on, / means minode[0].
 extern char	device[64], pathname[128];
 extern char	block[BLOCK_SIZE], datablock[BLOCK_SIZE];
 extern char	name [128][128];
-extern char completePath[256];
+extern char	completePath[256];
 
-extern int fd, n;	// file descriptor, number of names in path
+extern int		fd, n;	// file descriptor, number of names in path
 
 extern SUPER	*sb;
 extern GD		*gb;
@@ -122,64 +122,62 @@ extern int		dev;
 // All function declaractions will be here
 
 // Utility
-int get_block(int dev, int blockNumber, char * buf);
-void put_block(int dev, int blockNumber, char * buf);
-void token_path(char *pathname);
-unsigned long getino(int *dev, char *pathname);
-unsigned long search(MINODE *mip, char *name);
-MINODE *iget(int dev, unsigned long ino);
-void iput(MINODE *mip);
-int findmyname(MINODE *parent, unsigned long myino, char *myname);
-int findino(MINODE *mip, unsigned long *myino, unsigned long *parentino);
-unsigned long isearch(INODE *inode, char *name);
-INODE *findInode(int inumber);
-int quit();
-void parseString(char *input, char *command, char *pathname);
-int findCommand(char *command);
-void printInode(INODE * ip);
-int do_stat2(char *pathname, struct stat *stPtr);
+int				get_block(int dev, int blockNumber, char * buf);
+void			put_block(int dev, int blockNumber, char * buf);
+void			token_path(char *pathname);
+unsigned long	getino(int *dev, char *pathname);
+unsigned long	search(MINODE *mip, char *name);
+MINODE			*iget(int dev, unsigned long ino);
+void			iput(MINODE *mip);
+int				findmyname(MINODE *parent, unsigned long myino, char *myname);
+int				findino(MINODE *mip, unsigned long *myino, unsigned long *parentino);
+unsigned long	isearch(INODE *inode, char *name);
+INODE			*findInode(int inumber);
+int				quit();
+void			parseString(char *input, char *command, char *pathname);
+int				findCommand(char *command);
+void			printInode(INODE * ip);
+int				do_stat2(char *pathname, struct stat *stPtr);
 
 
 // Functions
-MINODE *new_MINODE(INODE * inode, unsigned long ino, int minodeLoc, int dev);
-void get_device();
-void init();
-void mount_root();
-void printDir(unsigned long ino);
-void compPath(char * path);
+MINODE			*new_MINODE(INODE * inode, unsigned long ino, int minodeLoc, int dev);
+void			get_device();
+void			init();
+void			mount_root();
+void			printDir(unsigned long ino);
+void			compPath(char * path);
 
 
 // Cmds
-int _menu();
-int _ls(char *pathname);
-int _cd(char *pathname);
-int _mkdir(char *pathname);
-int _rmdir(char *pathname);
-int _pwd();
-int _creat0(char *pathname);
-int _rm(char *pathname);
-int __exit();
-
+int				_menu();
+int				_ls(char *pathname);
+int				_cd(char *pathname);
+int				_mkdir(char *pathname);
+int				_rmdir(char *pathname);
+int				_pwd();
+int				_creat0(char *pathname);
+int				_rm(char *pathname);
+int				__exit();
 
 // Helpers to Cmds
-int _stat(char *pathname);
-void do_stat1(struct stat * mystat, INODE * ino);
-int rec_pwd(MINODE *wd);
-int rec_complete(MINODE *wd);
-int my_mkdir(MINODE *pip, char *name);
-
+int				_stat(char *pathname);
+void			do_stat1(struct stat * mystat, INODE * ino);
+int				rec_pwd(MINODE *wd);
+int				rec_complete(MINODE *wd);
+int				my_mkdir(MINODE *pip, char *name);
 
 // Alloc/Dealloc functions
-unsigned long ialloc(int dev);
-void idealloc(int dev, unsigned long ino);
-void decFreeInodes(int dev);
-void incFreeInodes(int dev);
+unsigned long	ialloc(int dev);
+void			idealloc(int dev, unsigned long ino);
+void			decFreeInodes(int dev);
+void			incFreeInodes(int dev);
 
-unsigned long balloc(int dev);
-void bdealloc(int dev, unsigned long ino);
-void decFreeBlocks(int dev);
-void incFreeBlocks(int dev);
+unsigned long	balloc(int dev);
+void			bdealloc(int dev, unsigned long ino);
+void			decFreeBlocks(int dev);
+void			incFreeBlocks(int dev);
 
-int tstbit(char *buf, int BIT);
-int setbit(char *buf, int BIT);
-int clearbit(char *buf, int BIT);
+int				tstbit(char *buf, int BIT);
+int				setbit(char *buf, int BIT);
+int				clearbit(char *buf, int BIT);
