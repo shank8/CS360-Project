@@ -122,8 +122,6 @@ void init()
 		minode[i].refCount = 0;
 	}
 
-
-
 	// INIT root
 	root = NULL;
 	
@@ -165,7 +163,7 @@ void mount_root()
 	if(fd < 0)
 	{
 		printf("Error opening device...\n");
-		return;
+		return;	//TODO: if this fails the user needs to be asked for the device again
 	}
 	printf("-- Successfully opened %s for read --\n", device);
 	
@@ -208,7 +206,7 @@ void mount_root()
 	get_block(dev, iNodeBeginBlock, block);
 	cwd = ip = (INODE *)(block)+1;
 
-	root = iget(dev, ROOT_INODE); // Get the root inode from disk and put into minodes
+	root = iget(dev, ROOT_INODE, "/"); // Get the root inode from disk and put into minodes
 	
 	proc[SUPER_USER].cwd = proc[1].cwd = root;
 
@@ -262,7 +260,7 @@ void printDir(unsigned long ino)
 	return;
 }
 
-void compPath(char * path)
+void compPath(char *path)
 {
 //	strcpy(completePath, "");
 //	strcpy(name[0], "");
@@ -300,6 +298,10 @@ printf("running->cwd->ino != ROOT_INODE\n");
 		{
 			strcat(completePath, "/");
 			strcat(completePath, path);
+		}
+		else//(strcmp(path, "")==0)
+		{
+			
 		}
 	}
 	printf("Complete Path: %s\n", completePath);

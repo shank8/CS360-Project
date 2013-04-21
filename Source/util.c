@@ -110,7 +110,7 @@ printf("search() name = %s\n", name);
 //  If you do not find it in memory, you must allocate a FREE Minode[i], load
 //  the INODE from disk into that Minode[i].INODE, initialize the Minode[]'s
 //  other fields and return its address as a MINODE pointer,
-MINODE *iget(int dev, unsigned long ino)
+MINODE *iget(int dev, unsigned long ino, char *nodeName)
 {
 	MINODE *tmpMINode;
 	INODE *tmpInode = findInode(ino);
@@ -144,6 +144,7 @@ MINODE *iget(int dev, unsigned long ino)
 	}
 //	printf("i_size = %d, ino = %lu, dev = %u, freeINode = %d\n", tmpInode->i_size, ino, dev, freeINode);
 	tmpMINode = new_MINODE(tmpInode, ino, freeINode, dev);
+	strcpy(tmpMINode->name, nodeName);
 	
 	return tmpMINode;
 }
@@ -152,6 +153,7 @@ void iput(MINODE *mip)
 {
 	int ino;
 	INODE *inode = NULL;
+	INODE *in = NULL;
 	char datablock[BLOCK_SIZE];
 
 	mip->refCount--;
@@ -176,10 +178,25 @@ void iput(MINODE *mip)
 	get_block(dev, mip->INODE.i_block[0], datablock);
 	ino = mip->ino;
 	inode = findInode(ino);
+	
+	////////////////////////////////////////////////////
+//	printf("i_size = %d\n", mip->INODE.i_size);
+	////////////////////////////////////////////////////
+	
+	/////////////////////
+	cp = datablock;
+	cp += 128*ino;
+	in = (INODE *)cp;
+	
+	memcpy(in, inode, 128);
+	/////////////////////
+	
 printf("iput(): mip->INODE.i_size = %d, mip->INODE.i_mode = %x,\nmip->INODE.i_block[0] = %d\n", mip->INODE.i_size, mip->INODE.i_mode, mip->INODE.i_block[0]);
 
 	// Copy the contents of the MINODE into the location in disk
-	put_block(dev, mip->INODE.i_block[0], datablock);//memcpy(inode, &(mip->INODE), sizeof(INODE));
+	put_block(dev, mip->INODE.i_block[0], datablock);
+	//memcpy(inode, &(mip->INODE), sizeof(INODE));
+	
  ///////////////////////////////////////////////////////////////////////////////
  //  This function releases a Minode[]. Since an Minode[]'s refCount indicates
  //  the number of users on this Minode[], releasing is done as follows:
@@ -426,7 +443,7 @@ int do_stat2(char *pathname, struct stat *stPtr)
 		 ino = getino(&dev, pathname); // Use YOUR showBlock program; ino > 0
 		 mip = iget(dev, ino);         // iget() returns a pointer to minode[]*/
 	ino = getino(&dev, pathname);
-	mip = iget(dev, ino);
+	mip = iget(dev, ino, basename(pathname));
 	
 	/* 3. Copy entries of INODE into stat struct;
 	 As you can see, everything needed by the stat struct is in minode.INODE

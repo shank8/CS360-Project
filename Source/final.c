@@ -30,7 +30,9 @@ int main(int argc, char * argv[], char * env[])
 
 		//Find the command string and call the corresponding function;
 		parseString(line, command, pathname);
-
+		
+//printf("pathname = %s\n", pathname);
+		
 		compPath(pathname);
 		strcpy(pathname, completePath);
 		printf("PATHNAME: %s\n", pathname);

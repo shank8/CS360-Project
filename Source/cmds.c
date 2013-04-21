@@ -23,16 +23,14 @@ int _ls(char *path)
 	MINODE *mp = running->cwd;
 	INODE *inode;
 	struct stat fileStat;
-	//	int isRoot = -1;
 	unsigned long ino;
 	char name[64];
 	char createtime[64];
 	time_t ntime;
 	struct tm *mytm;
 	int i;
-//	strcpy(name[0], "");
-//	strcpy(completePath, "");
-
+	int used = 0;
+	
 printf("the path = %s\n", path);
 	r = do_stat2(path, &mystat);
 
@@ -41,10 +39,10 @@ printf("the path = %s\n", path);
 	if (strcmp(path, "") == 0)
 	{
 		printf("From CWD:\n");
-//printf("mp->ino = %lu, mp->INODE.i_block[0] = %d\n", mp->ino, mp->INODE.i_block[0]);
 	}
 	else
 	{
+		used = 1;
 		printf("Relative to %s\n", path);
 			
 		// set up the directory to be accessed
@@ -55,7 +53,7 @@ printf("the path = %s\n", path);
 			return -1;
 		}
 //printf("ino = %lu\n", ino);
-		mp = iget(mp->dev, ino);
+		mp = iget(mp->dev, ino, basename(path));
 	}
 
 	// look in the directory, iget(): load the inode into memory (it becomes an minode and increases its refcount by 1)
@@ -111,7 +109,7 @@ printf("the path = %s\n", path);
 			printf(" %d ", fileStat.st_uid);
 
 			//SIZE
-			printf(" %*d ", 8, fileStat.st_size);
+			printf(" %*d ", 8, (int)fileStat.st_size);//printf(" %*d ", 8, fileStat.st_size);
 
 			//CREATION TIME
 
@@ -128,7 +126,10 @@ printf("the path = %s\n", path);
 			dp = (DIR *)cp;				// pull dp to the next record
 		}
 	}
-
+	
+	if (used == 1)
+		iput(mp);
+	
 	return 0;
 }
 
@@ -144,7 +145,7 @@ int _cd(char *pathname)
 	if (strcmp(pathname, "")==0)//if(pathname[0] == 0)
 	{ 
 		iput(running->cwd);
-		running->cwd = iget(ROOT_DEV, ROOT_INODE);
+		running->cwd = iget(ROOT_DEV, ROOT_INODE, "/");
 
 		result = 0;
 	}
@@ -162,16 +163,12 @@ int _cd(char *pathname)
 		findino(running->cwd, &ino, &pino);
 		// printf("ino = %d\npino = %d\n\n", ino, pino);
 
-		mip = iget(dev, pino);
+		mip = iget(dev, pino, "..");	//TODO: get actual name
 		iput(running->cwd);
 		running->cwd = mip;
 	}
 	else
 	{
-//////////////////////////////////////////////////////////////////////////////////
-		running->cwd = iget(ROOT_DEV, ROOT_INODE);								//
-//////////////////////////////////////////////////////////////////////////////////
-
 		// Get the inode of the pathname into MINODE
 		ino = getino(&dev, pathname);
 		if (ino == 0)
@@ -180,14 +177,13 @@ int _cd(char *pathname)
 			return -1;
 		}
 		printf("CD -- ino = %d\n", (int)ino);
-		mip = iget(dev, ino);
+		mip = iget(dev, ino, basename(pathname));
 		printf("mip->INODE.i_mode = %x, it should be %x\n", mip->INODE.i_mode, DIR_MODE);
 		printf("mip->INODE.i_uid = %d\n", mip->INODE.i_uid);
 		printf("mip->INODE.i_gid = %d\n", mip->INODE.i_gid);
 		printf("mip->INODE.i_size = %d\n", mip->INODE.i_size);
 		printf("mip->INODE.i_links_count = %d\n", mip->INODE.i_links_count);
 		printf("mip->INODE.i_block[0] = %d\n", mip->INODE.i_block[0]);
-		
 		// Make sure its a DIR
 		if(mip->INODE.i_mode == DIR_MODE)
 		{
@@ -267,7 +263,7 @@ int _mkdir(char *pathname)
 	ino = getino(&dev, parent);
 
 	// Get the MINODE of the parent
-	pip = iget(dev, ino);
+	pip = iget(dev, ino, basename(parent));
 	printInode(&pip->INODE);
 
 	printf("i_mode: %x\nDIR_MODE: %x\n", pip->INODE.i_mode, DIR_MODE);
@@ -400,14 +396,14 @@ int _stat(char *pathname)
 
 	ino = getino(&dev, pathname);
 	printf("middle:%s\n", pathname);
-	mip = iget(dev, ino);
+	mip = iget(dev, ino, basename(pathname));
 
 	do_stat1(&mystat, &mip->INODE);
 
 	printf("after:%s\n", pathname);
 	printf("---- stat - %s ----\n\n", basename(pathname));
-	printf("Device: %d\n", mystat.st_dev);
-	printf("Inode: %d\n", mystat.st_ino);
+	printf("Device: %d\n", (int)mystat.st_dev);//printf("Device: %d\n", mystat.st_dev);
+	printf("Inode: %lu\n", ino);//printf("Inode: %d\n", mystat.st_ino);
 	printf("Permissions: ");
 
 	printf( (mystat.st_mode & S_IRUSR) ? "r" : "-");
@@ -424,9 +420,9 @@ int _stat(char *pathname)
 	printf("Links: %d\n", mystat.st_nlink);
 	printf("UID: %d\n", mystat.st_uid);
 	printf("GID: %d\n", mystat.st_gid);
-	printf("Size: %d\n", mystat.st_size);
-	printf("Blocksize: %d\n", mystat.st_blksize);
-	printf("# of Blocks: %d\n", mystat.st_blocks);
+	printf("Size: %d\n", (int)mystat.st_size);//printf("Size: %d\n", mystat.st_size);
+	printf("Blocksize: %d\n", (int)mystat.st_blksize);//printf("Blocksize: %d\n", mystat.st_blksize);
+	printf("# of Blocks: %d\n", (int)mystat.st_blocks);//printf("# of Blocks: %d\n", mystat.st_blocks);
 	printf("aTime: %s", ctime(&mystat.st_atime));
 	printf("cTime: %s", ctime(&mystat.st_ctime));
 	printf("mTime: %s", ctime(&mystat.st_mtime));
@@ -440,7 +436,7 @@ int _stat(char *pathname)
 void do_stat1(struct stat *mystat, INODE *ino)
 {
 	  mystat->st_dev = dev;
-	  mystat->st_ino = ino;
+	  mystat->st_ino =  (int)ino;
 	  mystat->st_mode = ino->i_mode;
 	  mystat->st_nlink = ino->i_links_count;
 	  mystat->st_uid = ino->i_uid;
@@ -516,8 +512,7 @@ int rec_pwd(MINODE *wd)
 		{
 			// getchar();
 			//printDir(pino);
-
-			nwd = iget(dev, pino);
+			nwd = iget(dev, pino, basename(name[0]));
 
 			rec_pwd(nwd);
 			
@@ -595,8 +590,8 @@ printf("inode size = %d\n", wd->INODE.i_size);
 		else
 		{
 			//printDir(pino);
-
-			nwd = iget(dev, pino);
+			
+			nwd = iget(dev, pino, name[0]);
 //TODO: Do we have a matching iput() to go with this?
 			rec_pwd(nwd);
 
@@ -635,9 +630,7 @@ int my_mkdir(MINODE *pip, char *name)
 
 		//5. call  iput(mip);  
 		//   which should write the new INODE out to disk.
-   
   */
-
 	int		inumber;
 	int		bnumber;
 	int		ideal_len;
@@ -672,7 +665,7 @@ printf("dev = %d\n", dev);
 	struct Mount *mountptr;
 	char     name[128];           // name string of file
 */
-	mip = iget(dev,inumber);
+	mip = iget(dev,inumber, name);
 
 //	strcpy(mip->name, name);
 	mip->INODE.i_mode = DIR_MODE;		/* DIR and permissions */
@@ -705,7 +698,7 @@ printf("dev = %d\n", dev);
 
 // C CODE:
 */
-//	get_block(dev, bnumber, buf);// do we need a get_block() here?
+	get_block(dev, bnumber, buf);// do we need a get_block() here?
 //	printf("buf = %s\n", buf);///////////////////////////////////////////////////
 	dp = (DIR *)buf;
 
