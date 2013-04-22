@@ -1,11 +1,11 @@
 #include "headers/type.h"
 
+
 ////////////////////////////////////////////////////////
 //
 //	Command Functions
 //
 ////////////////////////////////////////////////////////
-
 
 int _menu(char *arg, char *pathname)
 {
@@ -371,7 +371,7 @@ int _chmod(char *arg, char *pathname)
 	MINODE *mip;
 	int ino = 0;
 	int len = 0;
-	int i = 0;
+	int i = 0, j = 0;
 	int add = -1;
 	int user = -1;
 	int group = -1;
@@ -379,6 +379,9 @@ int _chmod(char *arg, char *pathname)
 	int read = -1;
 	int write = -1;
 	int execute = -1;
+	int result1 = 0;
+	int result2 = 0;
+	int result3 = 0;
 	
 	printf("~~~~~~CHMOD~~~~~~~\n\n");
 	
@@ -437,13 +440,42 @@ int _chmod(char *arg, char *pathname)
 			
 		}
 		*/
-		printf("\nTest (Before):\nmip->INODE.i_uid = %u\n\n", mip->INODE.i_uid);
+//		mip->INODE.i_mode = 33188; //040755 is the same number in octal
+		printf("\nTest (Before):\nmip->INODE.i_mode = %d\n\n", mip->INODE.i_mode);
 		
-		mip->INODE.i_mode = 16877;
+		result1 = 0;
+		i = 1;
+		while (mip->INODE.i_mode)	// integer to octal conversion
+		{
+			result1 += (mip->INODE.i_mode % 8) * i;
+			mip->INODE.i_mode /= 8;
+			i *= 10;
+		}
+		printf("intermediate result = %d\n", result1);///////////////////////////////////////////////////////////////////
+		result2 = 0;
+		i = 0;
+		mip->INODE.i_mode = result1;
+		while (mip->INODE.i_mode)	// octal to integer conversion
+		{
+			j = 0;
+			result3 = 1;
+			while (j < i)
+			{
+				result3 *= 8;
+				j++;
+			}
+			result2 += (mip->INODE.i_mode % 10) * result3/*pow(8, i)*/;
+			mip->INODE.i_mode /= 10;
+			i++;
+		}
+		
+//		mip->INODE.i_mode = 33188; //reg file
+//		mip->INODE.i_mode = 16877; //040755 is the same number in octal
+		
+		mip->INODE.i_mode = result2;
 		mip->dirty = 1;
 		
-		printf("\nTest (After):\nmip->INODE.i_uid = %u\n\n", mip->INODE.i_uid);
-		
+		printf("\nTest (After):\nmip->INODE.i_mode = %d\n\n", mip->INODE.i_mode);
 		
 		iput(mip);
 	}
@@ -885,7 +917,7 @@ printf("dev = %d\n", dev);
 */
 
 // C CODE:
-	get_block(dev, bnumber, buf);// do we need a get_block() here?
+//	get_block(dev, bnumber, buf);// do we need a get_block() here?
 
 	dp = (DIR *)buf;
 

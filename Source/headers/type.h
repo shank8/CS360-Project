@@ -8,6 +8,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <time.h>
+#include <math.h>
+
 
 // define shorter TYPES, save typing efforts
 typedef struct ext2_group_desc	GD;

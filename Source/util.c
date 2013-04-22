@@ -152,7 +152,7 @@ MINODE *iget(int dev, unsigned long ino, char *nodeName)
 
 void iput(MINODE *mip)
 {
-	//int ino;
+	int ino;
 	int nblock, num;
 	int i;
 	INODE *inode = NULL;
@@ -178,33 +178,24 @@ void iput(MINODE *mip)
 //  else: currently loaded device is the device we're writing to
 	
 	// Get inode number and address of inode
-	//ino = mip->ino;
-	//inode = findInode(ino);
+	ino = mip->ino;
+	inode = findInode(ino);
 	
 	/////////////////////
-	get_block(dev, mip->INODE.i_block[0], datablock);
+	
 	
 	nblock = iNodeBeginBlock + ((mip->ino - 1) / 8);
 	num = ((mip->ino-1) % 8);
 //	strPtr = ;
+
+	get_block(dev, nblock, datablock);
 	
-	cp = datablock;
-	cp += ((mip->ino-1)%8)*128;
-	inode = (INODE *)cp;
+//	cp = datablock;
+//	cp += ((mip->ino-1)%8)*128;
+	inode = (INODE *)datablock + num;
 	//inode = (INODE *)(&datablock[mip->ino*128]);
-	inode->i_mode = mip->INODE.i_mode;		/* DIR and permissions */
-	inode->i_uid  = mip->INODE.i_uid;	/* Owner Uid */
-	inode->i_gid  = mip->INODE.i_gid;	/* Group Id */
-	inode->i_size = mip->INODE.i_size;		/* Size in bytes */
-	inode->i_links_count = mip->INODE.i_links_count;	/* Links count */
-	inode->i_atime = mip->INODE.i_atime;
-	inode->i_ctime = mip->INODE.i_ctime;
-	inode->i_mtime = mip->INODE.i_mtime;
-	inode->i_blocks = mip->INODE.i_blocks;
-	for (i=0; i<15; i++)
-	{
-		inode->i_block[i] = mip->INODE.i_block[i];
-	}
+	*inode = mip->INODE;
+	
 	
 	//strncpy(strPtr, mip->INODE, 128);//inode = (INODE *)datablock[nblock*(long)BLOCK_SIZE];
 	//ino->i_size = ??;
@@ -219,7 +210,7 @@ void iput(MINODE *mip)
 printf("iput(): mip->INODE.i_size = %d, mip->INODE.i_mode = %x,\nmip->INODE.i_block[0] = %d\n", mip->INODE.i_size, mip->INODE.i_mode, mip->INODE.i_block[0]);
 
 	// Copy the contents of the MINODE into the location in disk
-	put_block(dev, mip->INODE.i_block[0], datablock);
+	put_block(dev, nblock, datablock);
 	//memcpy(inode, &(mip->INODE), sizeof(INODE));
 	
  ///////////////////////////////////////////////////////////////////////////////
