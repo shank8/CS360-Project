@@ -5,9 +5,10 @@ MINODE *root;	//====>   from here on, / means minode[0].
 
 char device[64], pathname[128];
 char block[BLOCK_SIZE], datablock[BLOCK_SIZE];
-char name[128][128];
+//char name[128][128];
 
 char completePath[256];
+char newfile[256];
 
 int fd, n;	// file descriptor, number of names in path
 
@@ -25,12 +26,9 @@ int dev = 0; // 0 is main device
 
 __u32 iNodeBeginBlock;
 
-MINODE *new_MINODE(INODE *inode, unsigned long ino, int minodeLoc, int dev)
+MINODE *new_MINODE(INODE * inode, unsigned long ino, int minodeLoc, int dev)
 {
-//	if (inode != NULL)
-		memcpy(&(minode[minodeLoc].INODE), inode, sizeof(INODE)); // This should copy the inode
-//	else
-//		minode[minodeLoc].INODE = NULL;
+	memcpy(&(minode[minodeLoc].INODE), inode, sizeof(INODE)); // This should copy the inode
 
 	minode[minodeLoc].dev = dev;
 	minode[minodeLoc].ino = ino;
@@ -122,6 +120,8 @@ void init()
 		minode[i].refCount = 0;
 	}
 
+
+
 	// INIT root
 	root = NULL;
 	
@@ -163,7 +163,7 @@ void mount_root()
 	if(fd < 0)
 	{
 		printf("Error opening device...\n");
-		return;	//TODO: if this fails the user needs to be asked for the device again
+		return;
 	}
 	printf("-- Successfully opened %s for read --\n", device);
 	
@@ -206,7 +206,7 @@ void mount_root()
 	get_block(dev, iNodeBeginBlock, block);
 	cwd = ip = (INODE *)(block)+1;
 
-	root = iget(dev, ROOT_INODE, "/"); // Get the root inode from disk and put into minodes
+	root = iget(dev, ROOT_INODE); // Get the root inode from disk and put into minodes
 	
 	proc[SUPER_USER].cwd = proc[1].cwd = root;
 
@@ -223,16 +223,15 @@ void mount_root()
 	return;
 }
 
-void printDir(unsigned long ino)
-{
+void printDir(unsigned long ino){
 
 	/*struct ext2_dir_entry_2 {
-		__u32	inode;			// Inode number 
-		__u16	rec_len;		// Directory entry length 
-		__u8	name_len;		// Name length 
-		__u8	file_type;
-		char	name[EXT2_NAME_LEN];	// File name 
-	};*/
+			__u32	inode;			/* Inode number 
+			__u16	rec_len;		/* Directory entry length 
+			__u8	name_len;		/* Name length 
+			__u8	file_type;
+			char	name[EXT2_NAME_LEN];	/* File name 
+		};*/
 
 	char buf[BLOCK_SIZE];
 	char name[256];
@@ -240,71 +239,51 @@ void printDir(unsigned long ino)
 
 	inode = findInode(ino);
 	get_block(dev, inode->i_block[0], buf);
-	// Iterate through dir entries to find ..
-	dp = (DIR *)buf;
-	cp = buf; 
+      // Iterate through dir entries to find ..
+    dp = (DIR *)buf;
+    cp = buf; 
+  
+  	
+      printf("---- DIR ENTRIES ----\n");
+      while(cp < buf + BLOCK_SIZE){
 
+      	strncpy(name, dp->name, dp->name_len);
+      	name[dp->name_len] = '\0';
 
-	printf("---- DIR ENTRIES ----\n");
-	while(cp < buf + BLOCK_SIZE)
-	{
-		strncpy(name, dp->name, dp->name_len);
-		name[dp->name_len] = '\0';
-
-		printf("inode: %d\n", (int)dp->inode);
-		printf("name: %s\n\n", name);
-		cp += dp->rec_len;            /* advance by rec_len */
-		dp = (DIR *)cp;
-	}
-	
-	return;
+      	printf("inode: %d\n", (int)dp->inode);
+      	printf("name: %s\n\n", name);
+        cp += dp->rec_len;            /* advance by rec_len */
+        dp = (DIR *)cp;
+      }
 }
+void compPath(char * path){
 
-void compPath(char *path)
-{
-//	strcpy(completePath, "");
-//	strcpy(name[0], "");
+	strcpy(completePath, "");
 
-	if(path[0] == '/')
-	{
+	if(path[0] == '/'){
 		strcpy(completePath, path);
 		return;
-	}
-	else if(strcmp(path, ".")==0)
-	{
-		strcpy(completePath, ".");
+	}else if(strcmp(path, ".")==0){
 		return;
-	}
-	else if(strcmp(path, "..")==0)
-	{
-		strcpy(completePath, "..");
+	}else if(strcmp(path, "..")==0){
 		return;
-	}
-	else // path[0] != '/'
-	{
-//printf("path[0] != '/'\n");
+	}else{
 		//strcat(completePath, "/");
-printf("running->cwd->ino = %lu, running->cwd->INODE.i_block[0] = %d\n", running->cwd->ino, running->cwd->INODE.i_block[0]);
-		if(running->cwd->ino == ROOT_INODE)
-		{
-printf("running->cwd->ino == ROOT_INODE\n");
-		}
-		else
-		{
-printf("running->cwd->ino != ROOT_INODE\n");
+
+		if(running->cwd->ino == ROOT_INODE){
+			strcat(completePath, "");
+		}else{
 			rec_complete(running->cwd);
 		}
-		if (strcmp(path, "")!=0)
-		{
-			strcat(completePath, "/");
-			strcat(completePath, path);
-		}
-		else//(strcmp(path, "")==0)
-		{
-			
-		}
+		strcat(completePath, "/");
+		strcat(completePath, path);
+		
+
 	}
 	printf("Complete Path: %s\n", completePath);
+	strcpy(path, completePath);
+	
 
 	return;
+
 }

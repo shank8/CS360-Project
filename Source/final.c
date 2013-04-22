@@ -6,6 +6,7 @@ int main(int argc, char * argv[], char * env[])
 {
 	char line[128], command[128], pathname[128];
 	int ID;
+	char oldfile[128];
 	// DEVICE SELECT
 	get_device();
 
@@ -21,8 +22,6 @@ int main(int argc, char * argv[], char * env[])
 		strcpy(line, "");
 		strcpy(command, "");
 		strcpy(pathname, "");
-		strcpy(name[0], "");
-		strcpy(completePath, "");
 		printf("\n\ninput a command (type help for more info): ");
 		//read a line containting  command [pathname]; // [ ] means optional
 		fgets(line, 256, stdin);
@@ -30,11 +29,12 @@ int main(int argc, char * argv[], char * env[])
 
 		//Find the command string and call the corresponding function;
 		parseString(line, command, pathname);
-		
-//printf("pathname = %s\n", pathname);
-		
+
 		compPath(pathname);
-		strcpy(pathname, completePath);
+		if(newfile){
+			compPath(newfile);
+		}
+		
 		printf("PATHNAME: %s\n", pathname);
 		ID = findCommand(command);
 		switch(ID)
@@ -49,7 +49,10 @@ int main(int argc, char * argv[], char * env[])
 			case  6 : _creat0(pathname);	break;
 			case  7 : _rm(pathname);		break;
 			case  8 : _stat(pathname);		break;
-			case  9 : __exit();				break;
+			case  9 : 
+			strcpy(oldfile, pathname);
+			_link(oldfile, newfile); break;
+			case  10 : __exit();				break;
 		}
 	}
 	
