@@ -7,7 +7,7 @@
 ////////////////////////////////////////////////////////
 
 
-int _menu()
+int _menu(char *arg, char *pathname)
 {
 	printf("~~~~~~~MENU~~~~~~~\n\n");
 	
@@ -16,7 +16,7 @@ int _menu()
 	return 0;
 }
 
-int _ls(char *path)
+int _ls(char *arg, char *path)
 {
 	struct stat mystat;
 	int r;
@@ -133,7 +133,7 @@ printf("the path = %s\n", path);
 	return 0;
 }
 
-int _cd(char *pathname)
+int _cd(char *arg, char *pathname)
 {
 	printf("~~~~~~~~CD~~~~~~~~\n\n");
 	int result = -1;
@@ -207,7 +207,7 @@ int _cd(char *pathname)
 	return result;
 }
   
-int _mkdir(char *pathname)
+int _mkdir(char *arg, char *pathname)
 {
 	char *parent, *child;
 	char fullpath[128], fullpath2[128];
@@ -281,7 +281,7 @@ int _mkdir(char *pathname)
 	return 0;
 }
 
-int _rmdir(char *pathname)
+int _rmdir(char *arg, char *pathname)
 {
 	printf("~~~~~~RMDIR~~~~~~~\n\n");
 	
@@ -290,7 +290,7 @@ int _rmdir(char *pathname)
 	return 0;
 }
 
-int _pwd()
+int _pwd(char *arg, char *path)
 {
 	printf("~~~~~~~PWD~~~~~~~~\n\n");
 
@@ -310,7 +310,7 @@ int _pwd()
 	return 0;
 }
 
-int _creat0(char *pathname)
+int _creat0(char *arg, char *pathname)
 {
 	printf("~~~~~~CREAT~~~~~~~\n\n");
 	
@@ -319,7 +319,7 @@ int _creat0(char *pathname)
 	return 0;
 }
 
-int _rm(char *pathname)
+int _rm(char *arg, char *pathname)
 {
 	printf("~~~~~~~~RM~~~~~~~~\n\n");
 	
@@ -328,7 +328,202 @@ int _rm(char *pathname)
 	return 0;
 }
 
-int __exit()
+int _touch(char *arg, char *pathname)
+{
+	MINODE *mip;
+	int ino = 0;
+	
+	printf("~~~~~~TOUCH~~~~~~~\n\n");
+	
+	// Get the inode of the pathname into MINODE
+	if (strcmp(pathname, "")==0)
+	{
+		printf("Not given anything to touch.\nExiting\n");
+		return -1;
+	}
+	else
+	{
+		ino = getino(&dev, pathname);
+		if (ino == 0)
+		{
+			printf("Failed retreiving ino: touch()\n");
+			return -1;
+		}
+		printf("touch -- ino = %d\n", (int)ino);
+		mip = iget(dev, ino, basename(pathname));
+		
+printf("\nTest (Before):\nmip->INODE.i_atime = %u\nmip->INODE.i_mtime = %u\n\n", mip->INODE.i_atime, mip->INODE.i_mtime);
+		
+		mip->INODE.i_atime = time(0L);
+		mip->INODE.i_mtime = time(0L);
+		mip->dirty = 1;
+		
+printf("\nTest (After):\nmip->INODE.i_atime = %u\nmip->INODE.i_mtime = %u\n\n", mip->INODE.i_atime, mip->INODE.i_mtime);
+		
+		iput(mip);
+	}
+	
+	return 0;
+}
+
+int _chmod(char *arg, char *pathname)
+{
+	MINODE *mip;
+	int ino = 0;
+	int len = 0;
+	int i = 0;
+	int add = -1;
+	int user = -1;
+	int group = -1;
+	int others = -1;
+	int read = -1;
+	int write = -1;
+	int execute = -1;
+	
+	printf("~~~~~~CHMOD~~~~~~~\n\n");
+	
+	if (strcmp(pathname, "")==0)
+	{
+		printf("Not given a file to change the mode of.\nExiting\n");
+		return -1;
+	}
+	else
+	{
+		ino = getino(&dev, pathname);
+		if (ino == 0)
+		{
+			printf("Failed retreiving ino: chmod()\n");
+			return -1;
+		}
+		printf("chmod -- ino = %d\n", (int)ino);
+		mip = iget(dev, ino, basename(pathname));
+		/*
+		//process argument to determine what is in it
+		len = strlen(arg);
+		for (i = 0; i < len; i++)
+		{
+			if (strncmp(&arg[i], "+", 1)==0)
+				add = 1;
+			else if (strncmp(&arg[i], "-", 1)==0)
+				add = 0;
+			if (strncmp(&arg[i], "a", 1)==0)
+				user = group = others = 1;
+			if (strncmp(&arg[i], "u", 1)==0)
+				user = 1;
+			if (strncmp(&arg[i], "g", 1)==0)
+				group = 1;
+			if (strncmp(&arg[i], "o", 1)==0)
+				others = 1;
+			if (strncmp(&arg[i], "r", 1)==0)
+				read = 1;
+			if (strncmp(&arg[i], "w", 1)==0)
+				write = 1;
+			if (strncmp(&arg[i], "e", 1)==0)
+				execute = 1;
+		}
+		if (add == 1)	//adding permission(s)
+		{
+			//user
+			
+			
+			//group
+			
+			
+			//others
+			
+		}
+		else if (add == 0)	//removing permission(s)
+		{
+			
+		}
+		*/
+		printf("\nTest (Before):\nmip->INODE.i_uid = %u\n\n", mip->INODE.i_uid);
+		
+		mip->INODE.i_mode = 16877;
+		mip->dirty = 1;
+		
+		printf("\nTest (After):\nmip->INODE.i_uid = %u\n\n", mip->INODE.i_uid);
+		
+		
+		iput(mip);
+	}
+	
+	return 0;
+}
+
+int _chown(char *arg, char *pathname)
+{
+	MINODE *mip;
+	int ino = 0;
+	
+	printf("~~~~~~CHOWN~~~~~~~\n\n");
+	
+	if (strcmp(pathname, "")==0)
+	{
+		printf("Not given a file to change the owner of.\nExiting\n");
+		return -1;
+	}
+	else
+	{
+		ino = getino(&dev, pathname);
+		if (ino == 0)
+		{
+			printf("Failed retreiving ino: chown()\n");
+			return -1;
+		}
+		printf("chown -- ino = %d\n", (int)ino);
+		mip = iget(dev, ino, basename(pathname));
+		
+printf("\nTest (Before):\nmip->INODE.i_uid = %u\n\n", mip->INODE.i_uid);
+		
+		mip->INODE.i_uid = atoi(arg);
+		mip->dirty = 1;
+		
+printf("\nTest (After):\nmip->INODE.i_uid = %u\n\n", mip->INODE.i_uid);
+		
+		iput(mip);
+	}
+	
+	return 0;
+}
+
+int _chgrp(char *arg, char *pathname)
+{
+	MINODE *mip;
+	int ino = 0;
+	
+	printf("~~~~~~CHGRP~~~~~~~\n\n");
+	
+	if (strcmp(pathname, "")==0)
+	{
+		printf("Not given a file to change the group of.\nExiting\n");
+		return -1;
+	}
+	else
+	{
+		ino = getino(&dev, pathname);
+		if (ino == 0)
+		{
+			printf("Failed retreiving ino: chgrp()\n");
+			return -1;
+		}
+		printf("chgrp -- ino = %d\n", (int)ino);
+		mip = iget(dev, ino, basename(pathname));
+		
+printf("\nTest (Before):\nmip->INODE.i_gid = %u\n\n", mip->INODE.i_gid);
+		
+		mip->INODE.i_gid = atoi(arg);
+		mip->dirty = 1;
+		
+printf("\nTest (After):\nmip->INODE.i_gid = %u\n\n", mip->INODE.i_gid);
+		
+		iput(mip);
+	}
+	
+	return 0;
+}
+
+int __exit(char *arg, char *path)
 {
 	printf("~~~~~QUITTING~~~~~\n\n");
 	quit();
@@ -336,7 +531,7 @@ int __exit()
 	return 0;
 }
 
-int _stat(char *pathname)
+int _stat(char *arg, char *pathname)
 {
 	/*
 	1. Get inode of pathname into an MINODE:
@@ -665,22 +860,16 @@ printf("dev = %d\n", dev);
 	struct Mount *mountptr;
 	char     name[128];           // name string of file
 */
-	mip = iget(dev,inumber, name);
+	mip = iget(dev, inumber, name);
 
-//	strcpy(mip->name, name);
 	mip->INODE.i_mode = DIR_MODE;		/* DIR and permissions */
 	mip->INODE.i_uid  = running->uid;	/* Owner Uid */
 	mip->INODE.i_gid  = running->gid;	/* Group Id */
-	mip->INODE.i_size = 1024;		/* Size in bytes */
-//printf("mip->INODE.i_size = %d\n", mip->INODE.i_size);
-
-	mip->INODE.i_links_count = 2;	/* Links count */
-
-	mip->INODE.i_atime=mip->INODE.i_ctime=mip->INODE.i_mtime = time(0L); 
-
-	mip->INODE.i_blocks = 2;     	/* Blocks count in 512-byte blocks */
-	mip->dirty = 1;               	/* mark dirty */
-
+	mip->INODE.i_size = 1024;			/* Size in bytes */
+	mip->INODE.i_links_count = 2;		/* Links count */
+	mip->INODE.i_atime = mip->INODE.i_ctime = mip->INODE.i_mtime = time(0L);
+	mip->INODE.i_blocks = 2;     		/* Blocks count in 512-byte blocks */
+	mip->dirty = 1;               		/* mark dirty */
 	for (i=0; i<15; i++)
 	{
 		mip->INODE.i_block[i] = 0;
@@ -691,15 +880,13 @@ printf("dev = %d\n", dev);
 
 	iput(mip);
 /*
-
-
 6. Write the . and .. entries into a buf[ ] of BLOCK_SIZE; 
    write buf[] to the disk block allocated to this directory;
+*/
 
 // C CODE:
-*/
 	get_block(dev, bnumber, buf);// do we need a get_block() here?
-//	printf("buf = %s\n", buf);///////////////////////////////////////////////////
+
 	dp = (DIR *)buf;
 
 	dp->inode = inumber;			/* Inode number */

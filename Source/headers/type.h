@@ -48,8 +48,8 @@ typedef struct ext2_dir_entry_2	DIR;    // need this for new version of e2fs
 #define NFD					10
 #define NOFT				50
 
-#define ROOT_DEV          0
-#define NUM_COMMANDS 10
+#define ROOT_DEV			0
+#define NUM_COMMANDS		14
 
 // Open File Table
 typedef struct Oft{
@@ -102,7 +102,7 @@ extern INODE	*ip;
 extern DIR		*dp;
 extern MINODE	minode[NMINODES];	//<=== 100 minodes; refCount=0 means FREE
 extern MINODE	*root;	//====>   from here on, / means minode[0].
-extern char	device[64], pathname[128];
+extern char	device[64], pathname[128], arg1[128];
 extern char	block[BLOCK_SIZE], datablock[BLOCK_SIZE];
 extern char	name [128][128];
 extern char	completePath[256];
@@ -134,7 +134,7 @@ int				findino(MINODE *mip, unsigned long *myino, unsigned long *parentino);
 unsigned long	isearch(INODE *inode, char *name);
 INODE			*findInode(int inumber);
 int				quit();
-void			parseString(char *input, char *command, char *pathname);
+void			parseString(char *input, char *arg1, char *command, char *pathname);
 int				findCommand(char *command);
 void			printInode(INODE * ip);
 int				do_stat2(char *pathname, struct stat *stPtr);
@@ -150,18 +150,22 @@ void			compPath(char * path);
 
 
 // Cmds
-int				_menu();
-int				_ls(char *pathname);
-int				_cd(char *pathname);
-int				_mkdir(char *pathname);
-int				_rmdir(char *pathname);
-int				_pwd();
-int				_creat0(char *pathname);
-int				_rm(char *pathname);
-int				__exit();
+int				_menu	(char *arg, char *pathname);
+int				_ls		(char *arg, char *pathname);
+int				_cd		(char *arg, char *pathname);
+int				_mkdir	(char *arg, char *pathname);
+int				_rmdir	(char *arg, char *pathname);
+int				_pwd	(char *arg, char *pathname);
+int				_creat0	(char *arg, char *pathname);
+int				_rm		(char *arg, char *pathname);
+int				_touch	(char *arg, char *pathname);
+int				_chmod	(char *arg, char *pathname);
+int				_chown	(char *arg, char *pathname);
+int				_chgrp	(char *arg, char *pathname);
+int				__exit	(char *arg, char *pathname);
 
 // Helpers to Cmds
-int				_stat(char *pathname);
+int				_stat(char *arg, char *pathname);
 void			do_stat1(struct stat * mystat, INODE * ino);
 int				rec_pwd(MINODE *wd);
 int				rec_complete(MINODE *wd);

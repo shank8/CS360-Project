@@ -127,12 +127,13 @@ MINODE *iget(int dev, unsigned long ino, char *nodeName)
 		{
 			if (freeINode == -1) 
 				freeINode = i;
+			//else we have already found an open slot
 		}
 		else
 		{
 			if (minode[i].ino == ino)
 			{
-				printf("Found used MINODE[%d]\n", i);
+				printf("Found used MINODE[%d], refCount = %d\n", i, minode[i].refCount);
 				minode[i].refCount++;
 				return &minode[i];
 			}
@@ -151,10 +152,12 @@ MINODE *iget(int dev, unsigned long ino, char *nodeName)
 
 void iput(MINODE *mip)
 {
-	int ino;
+	//int ino;
+	int nblock, num;
+	int i;
 	INODE *inode = NULL;
-	INODE *in = NULL;
 	char datablock[BLOCK_SIZE];
+	char *cp;
 
 	mip->refCount--;
 	printf("\tMinode name: %s\n", mip->name);
@@ -175,20 +178,42 @@ void iput(MINODE *mip)
 //  else: currently loaded device is the device we're writing to
 	
 	// Get inode number and address of inode
-	get_block(dev, mip->INODE.i_block[0], datablock);
-	ino = mip->ino;
-	inode = findInode(ino);
-	
-	////////////////////////////////////////////////////
-//	printf("i_size = %d\n", mip->INODE.i_size);
-	////////////////////////////////////////////////////
+	//ino = mip->ino;
+	//inode = findInode(ino);
 	
 	/////////////////////
-	cp = datablock;
-	cp += 128*ino;
-	in = (INODE *)cp;
+	get_block(dev, mip->INODE.i_block[0], datablock);
 	
-	memcpy(in, inode, 128);
+	nblock = iNodeBeginBlock + ((mip->ino - 1) / 8);
+	num = ((mip->ino-1) % 8);
+//	strPtr = ;
+	
+	cp = datablock;
+	cp += ((mip->ino-1)%8)*128;
+	inode = (INODE *)cp;
+	//inode = (INODE *)(&datablock[mip->ino*128]);
+	inode->i_mode = mip->INODE.i_mode;		/* DIR and permissions */
+	inode->i_uid  = mip->INODE.i_uid;	/* Owner Uid */
+	inode->i_gid  = mip->INODE.i_gid;	/* Group Id */
+	inode->i_size = mip->INODE.i_size;		/* Size in bytes */
+	inode->i_links_count = mip->INODE.i_links_count;	/* Links count */
+	inode->i_atime = mip->INODE.i_atime;
+	inode->i_ctime = mip->INODE.i_ctime;
+	inode->i_mtime = mip->INODE.i_mtime;
+	inode->i_blocks = mip->INODE.i_blocks;
+	for (i=0; i<15; i++)
+	{
+		inode->i_block[i] = mip->INODE.i_block[i];
+	}
+	
+	//strncpy(strPtr, mip->INODE, 128);//inode = (INODE *)datablock[nblock*(long)BLOCK_SIZE];
+	//ino->i_size = ??;
+
+	//cp = datablock;
+	//cp += 128*ino;
+	//in = (INODE *)cp;
+	
+	//memcpy(in, inode, 128);
 	/////////////////////
 	
 printf("iput(): mip->INODE.i_size = %d, mip->INODE.i_mode = %x,\nmip->INODE.i_block[0] = %d\n", mip->INODE.i_size, mip->INODE.i_mode, mip->INODE.i_block[0]);
@@ -375,7 +400,7 @@ int quit()
 	return 0;
 }
 
-void parseString(char *input, char *command, char *pathname)
+void parseString(char *input, char *arg1, char *command, char *pathname)
 {
 	char *token;
 	char cpyInput[64];
@@ -391,6 +416,18 @@ void parseString(char *input, char *command, char *pathname)
 		printf("No command was found.\n");
 		return;
 	}
+	
+	// check if the command is one that has two arguments
+	if (strncmp(command, "ch", 2)==0)
+	{
+		strcpy(arg1, token);
+		token = strtok(NULL, " ");
+	}
+	else
+	{
+		strcpy(arg1, "");
+	}
+	
 	if (token != NULL)
 	{
 		strcpy(pathname, token);
@@ -404,7 +441,7 @@ void parseString(char *input, char *command, char *pathname)
 
 int findCommand(char *command)
 {
-	char *cmdList[NUM_COMMANDS] = {"help", "ls", "cd", "mkdir", "rmdir", "pwd", "creat", "rm", "stat", "quit"};
+	char *cmdList[NUM_COMMANDS] = {"help", "ls", "cd", "mkdir", "rmdir", "pwd", "creat", "rm", "stat", "touch", "chmod", "chown", "chgrp", "quit"};
 
 	int i = 0;
 	for(i=0;i<NUM_COMMANDS;i++)

@@ -19,7 +19,7 @@ char *cp;
 
 PROC proc[NPROC];
 
-PROC * running;
+PROC *running;
 
 int dev = 0; // 0 is main device
 
