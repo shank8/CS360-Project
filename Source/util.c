@@ -151,7 +151,6 @@ MINODE *iget(int dev, unsigned long ino, char *nodeName)
 	return tmpMINode;
 }
 
-
 void iput(MINODE *mip)
 {
 	int ino;
@@ -161,10 +160,9 @@ void iput(MINODE *mip)
 	char datablock[BLOCK_SIZE];
 	char *cp;
 
-	if(mip->refCount>0)
-	{
-	mip->refCount--;
-	}
+	if(mip->refCount > 0)
+		mip->refCount--;
+
 	printf("\tMinode name: %s\n", mip->name);
 	printf("\trefCount: %d\n", mip->refCount);
 	printf("\tdirty: %d\n", mip->dirty);
@@ -186,53 +184,18 @@ void iput(MINODE *mip)
 	ino = mip->ino;
 	inode = findInode(ino);
 
-	/////////////////////
-
-
 	nblock = iNodeBeginBlock + ((mip->ino - 1) / 8);
 	num = ((mip->ino-1) % 8);
-//	strPtr = ;
-
 	get_block(dev, nblock, datablock);
 
-//	cp = datablock;
-//	cp += ((mip->ino-1)%8)*128;
 	inode = (INODE *)datablock + num;
-	//inode = (INODE *)(&datablock[mip->ino*128]);
 	*inode = mip->INODE;
-
-
-	//strncpy(strPtr, mip->INODE, 128);//inode = (INODE *)datablock[nblock*(long)BLOCK_SIZE];
-	//ino->i_size = ??;
-
-	//cp = datablock;
-	//cp += 128*ino;
-	//in = (INODE *)cp;
-
-	//memcpy(in, inode, 128);
-	/////////////////////
 
 printf("iput(): mip->INODE.i_size = %d, mip->INODE.i_mode = %x,\nmip->INODE.i_block[0] = %d\n", mip->INODE.i_size, mip->INODE.i_mode, mip->INODE.i_block[0]);
 
 	// Copy the contents of the MINODE into the location in disk
 	put_block(dev, nblock, datablock);
-	//memcpy(inode, &(mip->INODE), sizeof(INODE));
 
- ///////////////////////////////////////////////////////////////////////////////
- //  This function releases a Minode[]. Since an Minode[]'s refCount indicates
- //  the number of users on this Minode[], releasing is done as follows:
- //    First, dec the refCount by 1. If (after dec) refCount > 0 ==> return;
- //    else:
- //      if Minode[].dirty == 0 ==> no need to write back, so return;
- //      Otherwise, (dirty==1) ==> must write the INODE back to disk.
- //
- //     To write an INODE back to disk:
- //     Use Minode's (dev, ino) to determine which dev and which INODE on disk,
- //   i.e. which disk block and which inode in that block.
- //   Read that block in, copy Minode's INODE into the INODE area in that block
- //   and write the block back to disk.
- // **just for simplicity, every time you close, print the reference count
- ////////////////////////////////////////////////////////////////////////////////
 	return;
 }
 
@@ -246,7 +209,6 @@ int findmyname(MINODE *parent, unsigned long myino, char *myname)
 	// we are searching for an inode and returning a name
 
 	int i = 0;
-//	int k = 0; // do we need the variable k?
 	char dpname[256];
 	int result = 0;
 	INODE * inode = &(parent->INODE);
@@ -405,7 +367,7 @@ int quit()
 	return 0;
 }
 
-void parseString(char *input, char *command, char *pathname)
+void parseString(char *input, char *arg1, char *command, char *pathname)
 {
 	char *token;
 	char cpyInput[256];
@@ -418,15 +380,18 @@ void parseString(char *input, char *command, char *pathname)
 	strcpy(command, "");
 	strcpy(arg1, "");
 
-	while(token != NULL){
-
-		if(count==0){
+	while(token != NULL)
+	{
+		if(count==0)
+		{
 			strcpy(command, token);
-
-
-		}else if(count == 1){
+		}
+		else if(count == 1)
+		{
 			strcpy(pathname, token);
-		}else{
+		}
+		else
+		{
 			strcpy(arg1, token);
 		}
 		count++;
@@ -439,8 +404,10 @@ void parseString(char *input, char *command, char *pathname)
 
 int findCommand(char *command)
 {
-	char * cmdList[NUM_COMMANDS] = {"help", "ls", "cd", "mkdir", "rmdir", "pwd", "creat", "rm", "stat", "link","unlink", "symlink", "touch","chmod", "chown", "chgrp", "quit"};
-
+	char * cmdList[NUM_COMMANDS] = {"help", "ls", "cd", "mkdir",
+	"rmdir", "pwd", "creat", "rm", "stat", "link", "unlink", "symlink",
+	"touch","chmod", "chown", "chgrp", "open", "close", "read", "write",
+	"pfd", "lseek", "cat", "cp", "mv", "quit"};
 	int i = 0;
 	for(i=0;i<NUM_COMMANDS;i++){
 		if(strncmp(cmdList[i], command, strlen(cmdList[i]))==0){
@@ -450,7 +417,6 @@ int findCommand(char *command)
 		
 	return -1;
 }
-
 
 void printInode(INODE * ip)
 {
@@ -492,7 +458,8 @@ void printInode(INODE * ip)
 	return;
 }
 
-int fileExists(INODE * inode, char * cmpname){
+int fileExists(INODE * inode, char * cmpname)
+{
 	int i = 0;
 	int found = 0;
 	char * cp, * prev;

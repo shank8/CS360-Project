@@ -30,7 +30,7 @@ int main(int argc, char * argv[], char * env[])
 		line[strlen(line)-1] = '\0';
 
 		//Find the command string and call the corresponding function;
-		parseString(line, command, pathname);
+		parseString(line, arg1, command, pathname);
 
 		compPath(pathname);
 		
@@ -56,7 +56,16 @@ int main(int argc, char * argv[], char * env[])
 			case  13: _chmod (arg1, pathname);	break;
 			case  14: _chown (arg1, pathname);	break;
 			case  15: _chgrp (arg1, pathname);	break;
-			case  16: __exit (arg1, pathname);	break;
+			case  16: _open  (arg1, pathname);	break;
+			case  17: _close (arg1, pathname);	break;
+			case  18: _read  (arg1, pathname);	break;
+			case  19: _write (arg1, pathname);	break;
+			case  20: _pfd   (arg1, pathname);	break;
+			case  21: _lseek (arg1, pathname);	break;
+			case  22: _cat   (arg1, pathname);	break;
+			case  23: _cp    (arg1, pathname);	break;
+			case  24: _mv    (arg1, pathname);	break;
+			case  25: __exit (arg1, pathname);	break;
 		}
 	}
 	

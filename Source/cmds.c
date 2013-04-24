@@ -11,7 +11,7 @@ int _menu(char *arg, char *pathname)
 {
 	printf("~~~~~~~MENU~~~~~~~\n\n");
 	
-	
+	printf("help\nls\ncd\nmkdir\nrmdir\npwd\ncreat\nrm\nstat\nlink\nunlink\nsymlink\ntouch\nchmod\nchown\nchgrp\nopen\nclose\nread\nwrite\npfd\nlseek\ncat\ncp\nmv\nquit");
 	
 	return 0;
 }
@@ -310,6 +310,7 @@ int _rmdir(char *arg, char *pathname)
 	}
 	return 0;
 }
+
 int rm_child(MINODE * pip, char *myname){
 
 	int i=0;
@@ -389,6 +390,7 @@ int rm_child(MINODE * pip, char *myname){
 	}
 	return 0;
 }
+
 int isDirEmpty(MINODE * pip){
 	int empty = 1;
 	DIR * dp;
@@ -412,6 +414,7 @@ int isDirEmpty(MINODE * pip){
 	return empty;
 
 }
+
 int _pwd(char *arg, char *pathname)
 {
 	printf("~~~~~~~PWD~~~~~~~~\n\n");
@@ -536,6 +539,7 @@ int _rm(char *arg, char *pathname)
 	}
 	return 0;
 }
+
 int _touch(char *arg, char *pathname)
 {
 	MINODE *mip, *pip;
@@ -584,6 +588,7 @@ printf("\nTest (After):\nmip->INODE.i_atime = %u\nmip->INODE.i_mtime = %u\n\n", 
 
 	return 0;
 }
+
 int _link(char * arg, char * pathname){
 
 
@@ -679,6 +684,7 @@ int _link(char * arg, char * pathname){
 
 	return 0;
 }
+
 int _unlink(char *arg, char *pathname){
 
 	unsigned long ino;
@@ -726,6 +732,7 @@ int _unlink(char *arg, char *pathname){
 	}
 	return 0;
 }
+
 int _symlink(char *arg, char *pathname){
 	unsigned long ino;
 	char old[128], new[128], new2[128];
@@ -785,23 +792,24 @@ int _symlink(char *arg, char *pathname){
 
 	return 0;
 }
+
 int _chmod(char *arg, char *pathname)
 {
 	MINODE *mip;
 	int add, user, group, others, nread, nwrite, nexecute, ino, len, i, mode, mode2, result1, result2, result3;
-	int ur, uw, ue, gr, gw, ge, or, ow, oe;
+	int ur, uw, ux, gr, gw, gx, or, ow, ox;
 	add = user = group = others = nread = nwrite = nexecute = -1;
-	ur = uw = ue = gr = gw = ge = or = ow = oe = 0;
+	ur = uw = ux = gr = gw = gx = or = ow = ox = 0;
 	ino = len = i = mode = mode2 = result1 = result2 = result3 = 0;
-
+	
 	printf("~~~~~~CHMOD~~~~~~~\n\n");
-
+	
 	if (strcmp(pathname, "")==0)
 	{
 		printf("Not given a file to change the mode of.\nExiting\n");
 		return -1;
 	}
-
+	
 	ino = getino(&dev, pathname);
 	if (ino == 0)
 	{
@@ -809,11 +817,11 @@ int _chmod(char *arg, char *pathname)
 		return -1;
 	}
 	mip = iget(dev, ino, basename(pathname));
-
+	
 	// convert current file permissions to octal
 	mode = mip->INODE.i_mode;
 printf("\nTest (Before):\nmip->INODE.i_mode = %d\n\n", mip->INODE.i_mode);
-
+	
 	result1 = 0;
 	i = 1;
 	while (mode)
@@ -822,7 +830,7 @@ printf("\nTest (Before):\nmip->INODE.i_mode = %d\n\n", mip->INODE.i_mode);
 		mode /= 8;
 		i *= 10;
 	}
-
+	
 	// find current file permissions
 	mode2 = result1;
 	mode2 %= 10;
@@ -834,10 +842,10 @@ printf("\nTest (Before):\nmip->INODE.i_mode = %d\n\n", mip->INODE.i_mode);
 		ow = 1;
 	else if ( ((mode2 % 8) < 2) || ((mode2 % 8) == 4) || ((mode2 % 8) == 5) )
 		ow = 0;
-	if ((mode2 % 1) == 1)
-		oe = 1;
-	else if ((mode2 % 1) == 0)
-		oe = 0;
+	if ((mode2 % 2) == 1)
+		ox = 1;
+	else if ((mode2 % 2) == 0)
+		ox = 0;
 	mode2 = result1/10;
 	mode2 %= 10;
 	if ((mode2 % 8) > 3)
@@ -848,10 +856,10 @@ printf("\nTest (Before):\nmip->INODE.i_mode = %d\n\n", mip->INODE.i_mode);
 		gw = 1;
 	else if ( ((mode2 % 8) < 2) || ((mode2 % 8) == 4) || ((mode2 % 8) == 5) )
 		gw = 0;
-	if ((mode2 % 1) == 1)
-		ge = 1;
-	else if ((mode2 % 1) == 0)
-		ge = 0;
+	if ((mode2 % 2) == 1)
+		gx = 1;
+	else if ((mode2 % 2) == 0)
+		gx = 0;
 	mode2 = result1/100;
 	mode2 %= 10;
 	if ((mode2 % 8) > 3)
@@ -863,10 +871,10 @@ printf("\nTest (Before):\nmip->INODE.i_mode = %d\n\n", mip->INODE.i_mode);
 	else if ( ((mode2 % 8) < 2) || ((mode2 % 8) == 4) || ((mode2 % 8) == 5) )
 		uw = 0;
 	if ((mode2 % 2) == 1)
-		ue = 1;
+		ux = 1;
 	else if ((mode2 % 2) == 0)
-		ue = 0;
-
+		ux = 0;
+printf("before: %d%d%d%d%d%d%d%d%d\n", ur, uw, ux, gr, gw, gx, or, ow, ox);
 	// process argument to determine what is in it
 	len = strlen(arg);
 	for (i = 0; i < len; i++)
@@ -890,7 +898,7 @@ printf("\nTest (Before):\nmip->INODE.i_mode = %d\n\n", mip->INODE.i_mode);
 		if (strncmp(&arg[i], "x", 1)==0)
 			nexecute = 1;
 	}
-
+	
 	// manipulate permissions
 	if (add == 1)			// adding permission(s)
 	{
@@ -902,9 +910,9 @@ printf("\nTest (Before):\nmip->INODE.i_mode = %d\n\n", mip->INODE.i_mode);
 			if (nwrite == 1)
 				uw = 1;
 			if (nexecute == 1)
-				ue = 1;
+				ux = 1;
 		}
-
+		
 		//group
 		if (group == 1)
 		{
@@ -913,9 +921,9 @@ printf("\nTest (Before):\nmip->INODE.i_mode = %d\n\n", mip->INODE.i_mode);
 			if (nwrite == 1)
 				gw = 1;
 			if (nexecute == 1)
-				ge = 1;
+				gx = 1;
 		}
-
+		
 		//others
 		if (others == 1)
 		{
@@ -924,7 +932,7 @@ printf("\nTest (Before):\nmip->INODE.i_mode = %d\n\n", mip->INODE.i_mode);
 			if (nwrite == 1)
 				ow = 1;
 			if (nexecute == 1)
-				oe = 1;
+				ox = 1;
 		}
 	}
 	else if (add == 0)		// removing permission(s)
@@ -937,9 +945,9 @@ printf("\nTest (Before):\nmip->INODE.i_mode = %d\n\n", mip->INODE.i_mode);
 			if (nwrite == 1)
 				uw = 0;
 			if (nexecute == 1)
-				ue = 0;
+				ux = 0;
 		}
-
+		
 		//group
 		if (group == 1)
 		{
@@ -948,9 +956,9 @@ printf("\nTest (Before):\nmip->INODE.i_mode = %d\n\n", mip->INODE.i_mode);
 			if (nwrite == 1)
 				gw = 0;
 			if (nexecute == 1)
-				ge = 0;
+				gx = 0;
 		}
-
+		
 		//others
 		if (others == 1)
 		{
@@ -959,7 +967,7 @@ printf("\nTest (Before):\nmip->INODE.i_mode = %d\n\n", mip->INODE.i_mode);
 			if (nwrite == 1)
 				ow = 0;
 			if (nexecute == 1)
-				oe = 0;
+				ox = 0;
 		}
 	}
 	else if (add == -1)	// numerical permissions
@@ -982,57 +990,57 @@ printf("\nTest (Before):\nmip->INODE.i_mode = %d\n\n", mip->INODE.i_mode);
 		result1 /= 1000;
 		result1 *= 10;
 		// add user permission octal
-		if (ur == 1 && uw == 1 && ue == 1)
+		if (ur == 1 && uw == 1 && ux == 1)
 			result1 += 7;
-		else if (ur == 1 && uw == 1 && ue == 0)
+		else if (ur == 1 && uw == 1 && ux == 0)
 			result1 += 6;
-		else if (ur == 1 && uw == 0 && ue == 1)
+		else if (ur == 1 && uw == 0 && ux == 1)
 			result1 += 5;
-		else if (ur == 1 && uw == 0 && ue == 0)
+		else if (ur == 1 && uw == 0 && ux == 0)
 			result1 += 4;
-		else if (ur == 0 && uw == 1 && ue == 1)
+		else if (ur == 0 && uw == 1 && ux == 1)
 			result1 += 3;
-		else if (ur == 0 && uw == 1 && ue == 0)
+		else if (ur == 0 && uw == 1 && ux == 0)
 			result1 += 2;
-		else if (ur == 0 && uw == 0 && ue == 1)
+		else if (ur == 0 && uw == 0 && ux == 1)
 			result1 += 1;
-		else if (ur == 0 && uw == 0 && ue == 0)
+		else if (ur == 0 && uw == 0 && ux == 0)
 			result1 += 0;
 		result1 *= 10;
 		// add group permission octal
-		if (gr == 1 && gw == 1 && ge == 1)
+		if (gr == 1 && gw == 1 && gx == 1)
 			result1 += 7;
-		else if (gr == 1 && gw == 1 && ge == 0)
+		else if (gr == 1 && gw == 1 && gx == 0)
 			result1 += 6;
-		else if (gr == 1 && gw == 0 && ge == 1)
+		else if (gr == 1 && gw == 0 && gx == 1)
 			result1 += 5;
-		else if (gr == 1 && gw == 0 && ge == 0)
+		else if (gr == 1 && gw == 0 && gx == 0)
 			result1 += 4;
-		else if (gr == 0 && gw == 1 && ge == 1)
+		else if (gr == 0 && gw == 1 && gx == 1)
 			result1 += 3;
-		else if (gr == 0 && gw == 1 && ge == 0)
+		else if (gr == 0 && gw == 1 && gx == 0)
 			result1 += 2;
-		else if (gr == 0 && gw == 0 && ge == 1)
+		else if (gr == 0 && gw == 0 && gx == 1)
 			result1 += 1;
-		else if (gr == 0 && gw == 0 && ge == 0)
+		else if (gr == 0 && gw == 0 && gx == 0)
 			result1 += 0;
 		result1 *= 10;
 		// add others permission octal
-		if (or == 1 && ow == 1 && oe == 1)
+		if (or == 1 && ow == 1 && ox == 1)
 			result1 += 7;
-		else if (or == 1 && ow == 1 && oe == 0)
+		else if (or == 1 && ow == 1 && ox == 0)
 			result1 += 6;
-		else if (or == 1 && ow == 0 && oe == 1)
+		else if (or == 1 && ow == 0 && ox == 1)
 			result1 += 5;
-		else if (or == 1 && ow == 0 && oe == 0)
+		else if (or == 1 && ow == 0 && ox == 0)
 			result1 += 4;
-		else if (or == 0 && ow == 1 && oe == 1)
+		else if (or == 0 && ow == 1 && ox == 1)
 			result1 += 3;
-		else if (or == 0 && ow == 1 && oe == 0)
+		else if (or == 0 && ow == 1 && ox == 0)
 			result1 += 2;
-		else if (or == 0 && ow == 0 && oe == 1)
+		else if (or == 0 && ow == 0 && ox == 1)
 			result1 += 1;
-		else if (or == 0 && ow == 0 && oe == 0)
+		else if (or == 0 && ow == 0 && ox == 0)
 			result1 += 0;
 	}
 
@@ -1050,14 +1058,14 @@ printf("intermediate result = %d\n", result1);
 		mode /= 10;
 		i++;
 	}
-
+	
 	mip->INODE.i_mode = result2;
 	mip->dirty = 1;
-
+printf("after:  %d%d%d%d%d%d%d%d%d\n", ur, uw, ux, gr, gw, gx, or, ow, ox);
 printf("\nTest (After):\nmip->INODE.i_mode = %d\n\n", mip->INODE.i_mode);
-
+	
 	iput(mip);
-
+	
 	return 0;
 }
 
@@ -1065,9 +1073,9 @@ int _chown(char *arg, char *pathname)
 {
 	MINODE *mip;
 	int ino = 0;
-
+	
 	printf("~~~~~~CHOWN~~~~~~~\n\n");
-
+	
 	if (strcmp(pathname, "")==0)
 	{
 		printf("Not given a file to change the owner of.\nExiting\n");
@@ -1083,17 +1091,17 @@ int _chown(char *arg, char *pathname)
 		}
 		printf("chown -- ino = %d\n", (int)ino);
 		mip = iget(dev, ino, basename(pathname));
-
+		
 printf("\nTest (Before):\nmip->INODE.i_uid = %u\n\n", mip->INODE.i_uid);
-
+		
 		mip->INODE.i_uid = atoi(arg);
 		mip->dirty = 1;
-
+		
 printf("\nTest (After):\nmip->INODE.i_uid = %u\n\n", mip->INODE.i_uid);
-
+		
 		iput(mip);
 	}
-
+	
 	return 0;
 }
 
@@ -1101,9 +1109,9 @@ int _chgrp(char *arg, char *pathname)
 {
 	MINODE *mip;
 	int ino = 0;
-
+	
 	printf("~~~~~~CHGRP~~~~~~~\n\n");
-
+	
 	if (strcmp(pathname, "")==0)
 	{
 		printf("Not given a file to change the group of.\nExiting\n");
@@ -1119,19 +1127,145 @@ int _chgrp(char *arg, char *pathname)
 		}
 		printf("chgrp -- ino = %d\n", (int)ino);
 		mip = iget(dev, ino, basename(pathname));
-
+		
 printf("\nTest (Before):\nmip->INODE.i_gid = %u\n\n", mip->INODE.i_gid);
-
+		
 		mip->INODE.i_gid = atoi(arg);
 		mip->dirty = 1;
-
+		
 printf("\nTest (After):\nmip->INODE.i_gid = %u\n\n", mip->INODE.i_gid);
-
+		
 		iput(mip);
 	}
-
+	
 	return 0;
 }
+
+int _open (char *arg, char *pathname)
+{
+	printf("~~~~~~~OPEN~~~~~~~\n\n");
+	
+//	1. ask for a pathname and mode to open:
+//         You may use mode = 0|1|2|3 for R|W|RW|APPEND
+//
+//  2. get pathname's inumber:
+//         ino = getino(&dev, pathname);
+//
+//  3. get its Minode pointer
+//         mip = iget(dev,ino);  
+//
+//  4. check mip->INODE.i_mode to verify it's a REGULAR file and permission OK.
+//     (Optional : do NOT check FILE type so that we can open DIRs for RW)
+//     
+//     Check whether the file is ALREADY opened with INCOMPATIBLE type:
+//           If it's already opened for W, RW, APPEND : reject.
+//           (that is, only multiple R are OK)
+//
+//  5. allocate an OpenFileTable (OFT) entry and fill in values:
+//         oftp = falloc();       // get a FREE OFT
+//         oftp->mode = mode;     // open mode 
+//         oftp->refCount = 1;
+//         oftp->inodeptr = mip;  // point at the file's minode[]
+//
+//  6. Depending on the open mode 0|1|2|3, set the OFT's offset accordingly:
+//
+//      switch(mode){
+//         case 0 : oftp->offset = 0; 
+//                  break;
+//         case 1 : truncate(mip);        // W : truncate file to 0 size
+//                  oftp->offset = 0;
+//                  break;
+//         case 2 : oftp->offset = 0;    // RW does NOT truncate file
+//                  break;
+//         case 3 : oftp->offset =  mip->INODE.i_size;  // APPEND mode
+//                  break;
+//         default: printf("invalid mode\n");
+//                  return(-1);
+//      }
+//
+//   7. find the SMALLEST i in running PROC's fd[ ] such that fd[i] is NULL
+//      Let running->fd[i] point at the OFT entry
+//
+//   8. update INODE's time field. 
+//      for W|RW|APPEND mode : mark Minode[] dirty
+//
+//   9. return i as the file descriptor
+	
+	return 0;
+}
+
+int _close (char *arg, char *pathname)
+{
+	printf("~~~~~~CLOSE~~~~~~~\n\n");
+	
+	
+	
+	return 0;
+}
+
+int _read (char *arg, char *pathname)
+{
+	printf("~~~~~~~READ~~~~~~~\n\n");
+	
+	
+	
+	return 0;
+}
+
+int _write (char *arg, char *pathname)
+{
+	printf("~~~~~~WRITE~~~~~~~\n\n");
+	
+	
+	
+	return 0;
+}
+
+int _pfd (char *arg, char *pathname)
+{
+	printf("~~~~~~~~PFD~~~~~~~\n\n");
+	
+	
+	
+	return 0;
+}
+
+int _lseek (char *arg, char *pathname)
+{
+	printf("~~~~~~LSEEK~~~~~~~\n\n");
+	
+	
+	
+	return 0;
+}
+
+int _cat (char *arg, char *pathname)
+{
+	printf("~~~~~~~~CAT~~~~~~~\n\n");
+	
+	
+	
+	return 0;
+}
+
+int _cp (char *arg, char *pathname)
+{
+	printf("~~~~~~~~CP~~~~~~~~\n\n");
+	
+	
+	
+	return 0;
+}
+
+int _mv (char *arg, char *pathname)
+{
+	printf("~~~~~~~~MV~~~~~~~~\n\n");
+	
+	
+	
+	return 0;
+}
+
 int _stat(char *arg, char *pathname){
 
 	/*
@@ -1322,8 +1456,8 @@ int rec_pwd(MINODE *wd){
 
 }
 
-int rec_complete(MINODE *wd){
-
+int rec_complete(MINODE *wd)
+{
   /*
   Write this as a recursive function, which
 
@@ -1394,7 +1528,6 @@ int rec_complete(MINODE *wd){
   return 0;
 
 }
-
 
 int my_mkdir(MINODE *pip, char *name)
 {

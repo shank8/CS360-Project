@@ -274,6 +274,7 @@ void printDir(unsigned long ino){
       i++;
      }
 }
+
 void compPath(char * path){
 
 	strcpy(completePath, "");

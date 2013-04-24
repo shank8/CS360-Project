@@ -48,8 +48,8 @@ typedef struct ext2_dir_entry_2	DIR;    // need this for new version of e2fs
 #define NFD					10
 #define NOFT				50
 
-#define ROOT_DEV          0
-#define NUM_COMMANDS 17
+#define ROOT_DEV			0
+#define NUM_COMMANDS		26
 
 // Open File Table
 typedef struct Oft{
@@ -105,11 +105,11 @@ extern MINODE	*root;	//====>   from here on, / means minode[0].
 extern char	device[64], pathname[128];
 extern char	block[BLOCK_SIZE], datablock[BLOCK_SIZE];
 //extern char	name [128][128];
-extern char completePath[256];
-extern char newfile[256];
-extern char arg1[128];
+extern char	completePath[256];
+extern char	newfile[256];
+extern char	arg1[128];
 
-extern int fd, n;	// file descriptor, number of names in path
+extern int		fd, n;	// file descriptor, number of names in path
 
 extern SUPER	*sb;
 extern GD		*gb;
@@ -133,7 +133,7 @@ void token_path(char *pathname);
 unsigned long getino(int *dev, char *pathname);
 unsigned long search(MINODE *mip, char *name);
 unsigned long isearch(INODE *inode, char *name);
-void parseString(char *input, char *command, char *pathname);
+void parseString(char *input, char *arg1, char *command, char *pathname);
 int quit();
 int findCommand(char *command);
 int fileExists(INODE * inode, char * cmpname);
@@ -150,20 +150,29 @@ void compPath(char * path);
 
 
 // Cmds
-int  _menu (char *arg, char *pathname);
-int  _ls   (char *arg, char *pathname);
-int  _cd   (char *arg, char *pathname);
-int  _mkdir  (char *arg, char *pathname);
-int  _rmdir  (char *arg, char *pathname);
-int  _pwd  (char *arg, char *pathname);
-int  _creat0 (char *arg, char *pathname);
-int  _rm   (char *arg, char *pathname);
-int  _link (char *arg, char *pathname);
-int  _touch  (char *arg, char *pathname);
-int  _chmod  (char *arg, char *pathname);
-int  _chown  (char *arg, char *pathname);
-int  _chgrp  (char *arg, char *pathname);
-int  __exit  (char *arg, char *pathname);
+int  _menu  (char *arg, char *pathname);
+int  _ls    (char *arg, char *pathname);
+int  _cd    (char *arg, char *pathname);
+int  _mkdir (char *arg, char *pathname);
+int  _rmdir (char *arg, char *pathname);
+int  _pwd   (char *arg, char *pathname);
+int  _creat0(char *arg, char *pathname);
+int  _rm    (char *arg, char *pathname);
+int  _link  (char *arg, char *pathname);
+int  _touch (char *arg, char *pathname);
+int  _chmod (char *arg, char *pathname);
+int  _chown (char *arg, char *pathname);
+int  _chgrp (char *arg, char *pathname);
+int  _open  (char *arg, char *pathname);
+int  _close (char *arg, char *pathname);
+int  _read  (char *arg, char *pathname);
+int  _write (char *arg, char *pathname);
+int  _pfd   (char *arg, char *pathname);
+int  _lseek (char *arg, char *pathname);
+int  _cat   (char *arg, char *pathname);
+int  _cp    (char *arg, char *pathname);
+int  _mv    (char *arg, char *pathname);
+int  __exit (char *arg, char *pathname);
 
 
 // Helpers to Cmds
