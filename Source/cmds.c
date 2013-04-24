@@ -369,19 +369,11 @@ printf("\nTest (After):\nmip->INODE.i_atime = %u\nmip->INODE.i_mtime = %u\n\n", 
 int _chmod(char *arg, char *pathname)
 {
 	MINODE *mip;
-	int ino = 0;
-	int len = 0;
-	int i = 0, j = 0;
-	int add = -1;
-	int user = -1;
-	int group = -1;
-	int others = -1;
-	int read = -1;
-	int write = -1;
-	int execute = -1;
-	int result1 = 0;
-	int result2 = 0;
-	int result3 = 0;
+	int add, user, group, others, nread, nwrite, nexecute, ino, len, i, mode, mode2, result1, result2, result3;
+	int ur, uw, ue, gr, gw, ge, or, ow, oe;
+	add = user = group = others = nread = nwrite = nexecute = -1;
+	ur = uw = ue = gr = gw = ge = or = ow = oe = 0;
+	ino = len = i = mode = mode2 = result1 = result2 = result3 = 0;
 	
 	printf("~~~~~~CHMOD~~~~~~~\n\n");
 	
@@ -390,95 +382,262 @@ int _chmod(char *arg, char *pathname)
 		printf("Not given a file to change the mode of.\nExiting\n");
 		return -1;
 	}
-	else
+	
+	ino = getino(&dev, pathname);
+	if (ino == 0)
 	{
-		ino = getino(&dev, pathname);
-		if (ino == 0)
+		printf("Failed retreiving ino: chmod()\n");
+		return -1;
+	}
+	mip = iget(dev, ino, basename(pathname));
+	
+	// convert current file permissions to octal
+	mode = mip->INODE.i_mode;
+printf("\nTest (Before):\nmip->INODE.i_mode = %d\n\n", mip->INODE.i_mode);
+	
+	result1 = 0;
+	i = 1;
+	while (mode)
+	{
+		result1 += (mode % 8) * i;
+		mode /= 8;
+		i *= 10;
+	}
+	
+	// find current file permissions
+	mode2 = result1;
+	mode2 %= 10;
+	if ((mode2 % 8) > 3)
+		or = 1;
+	else if ((mode2 % 8) < 4)
+		or = 0;
+	if ( ((mode2 % 8) > 5) || ((mode2 % 8) == 3) || ((mode2 % 8) == 2) )
+		ow = 1;
+	else if ( ((mode2 % 8) < 2) || ((mode2 % 8) == 4) || ((mode2 % 8) == 5) )
+		ow = 0;
+	if ((mode2 % 1) == 1)
+		oe = 1;
+	else if ((mode2 % 1) == 0)
+		oe = 0;
+	mode2 = result1/10;
+	mode2 %= 10;
+	if ((mode2 % 8) > 3)
+		gr = 1;
+	else if ((mode2 % 8) < 4)
+		gr = 0;
+	if ( ((mode2 % 8) > 5) || ((mode2 % 8) == 3) || ((mode2 % 8) == 2) )
+		gw = 1;
+	else if ( ((mode2 % 8) < 2) || ((mode2 % 8) == 4) || ((mode2 % 8) == 5) )
+		gw = 0;
+	if ((mode2 % 1) == 1)
+		ge = 1;
+	else if ((mode2 % 1) == 0)
+		ge = 0;
+	mode2 = result1/100;
+	mode2 %= 10;
+	if ((mode2 % 8) > 3)
+		ur = 1;
+	else if ((mode2 % 8) < 4)
+		ur = 0;
+	if ( ((mode2 % 8) > 5) || ((mode2 % 8) == 3) || ((mode2 % 8) == 2) )
+		uw = 1;
+	else if ( ((mode2 % 8) < 2) || ((mode2 % 8) == 4) || ((mode2 % 8) == 5) )
+		uw = 0;
+	if ((mode2 % 2) == 1)
+		ue = 1;
+	else if ((mode2 % 2) == 0)
+		ue = 0;
+	
+	// process argument to determine what is in it
+	len = strlen(arg);
+	for (i = 0; i < len; i++)
+	{
+		if (strncmp(&arg[i], "+", 1)==0)
+			add = 1;
+		else if (strncmp(&arg[i], "-", 1)==0)
+			add = 0;
+		if (strncmp(&arg[i], "a", 1)==0)
+			user = group = others = 1;
+		if (strncmp(&arg[i], "u", 1)==0)
+			user = 1;
+		if (strncmp(&arg[i], "g", 1)==0)
+			group = 1;
+		if (strncmp(&arg[i], "o", 1)==0)
+			others = 1;
+		if (strncmp(&arg[i], "r", 1)==0)
+			nread = 1;
+		if (strncmp(&arg[i], "w", 1)==0)
+			nwrite = 1;
+		if (strncmp(&arg[i], "x", 1)==0)
+			nexecute = 1;
+	}
+	
+	// manipulate permissions
+	if (add == 1)			// adding permission(s)
+	{
+		//user
+		if (user == 1)
 		{
-			printf("Failed retreiving ino: chmod()\n");
+			if (nread == 1)
+				ur = 1;
+			if (nwrite == 1)
+				uw = 1;
+			if (nexecute == 1)
+				ue = 1;
+		}
+		
+		//group
+		if (group == 1)
+		{
+			if (nread == 1)
+				gr = 1;
+			if (nwrite == 1)
+				gw = 1;
+			if (nexecute == 1)
+				ge = 1;
+		}
+		
+		//others
+		if (others == 1)
+		{
+			if (nread == 1)
+				or = 1;
+			if (nwrite == 1)
+				ow = 1;
+			if (nexecute == 1)
+				oe = 1;
+		}
+	}
+	else if (add == 0)		// removing permission(s)
+	{
+		//user
+		if (user == 1)
+		{
+			if (nread == 1)
+				ur = 0;
+			if (nwrite == 1)
+				uw = 0;
+			if (nexecute == 1)
+				ue = 0;
+		}
+		
+		//group
+		if (group == 1)
+		{
+			if (nread == 1)
+				gr = 0;
+			if (nwrite == 1)
+				gw = 0;
+			if (nexecute == 1)
+				ge = 0;
+		}
+		
+		//others
+		if (others == 1)
+		{
+			if (nread == 1)
+				or = 0;
+			if (nwrite == 1)
+				ow = 0;
+			if (nexecute == 1)
+				oe = 0;
+		}
+	}
+	else if (add == -1)	// numerical permissions
+	{
+		if ((strlen(arg) != 3) || (strncmp(&arg[0], "8", 1)==0)
+		|| (strncmp(&arg[0], "9", 1)==0) || (strncmp(&arg[1], "8", 1)==0)
+		|| (strncmp(&arg[1], "9", 1)==0) || (strncmp(&arg[2], "8", 1)==0)
+		|| (strncmp(&arg[2], "9", 1)==0))
+		{
+			printf("Incorrect format for argument (%s): chmod()\n", arg);
 			return -1;
 		}
-		printf("chmod -- ino = %d\n", (int)ino);
-		mip = iget(dev, ino, basename(pathname));
-		/*
-		//process argument to determine what is in it
-		len = strlen(arg);
-		for (i = 0; i < len; i++)
-		{
-			if (strncmp(&arg[i], "+", 1)==0)
-				add = 1;
-			else if (strncmp(&arg[i], "-", 1)==0)
-				add = 0;
-			if (strncmp(&arg[i], "a", 1)==0)
-				user = group = others = 1;
-			if (strncmp(&arg[i], "u", 1)==0)
-				user = 1;
-			if (strncmp(&arg[i], "g", 1)==0)
-				group = 1;
-			if (strncmp(&arg[i], "o", 1)==0)
-				others = 1;
-			if (strncmp(&arg[i], "r", 1)==0)
-				read = 1;
-			if (strncmp(&arg[i], "w", 1)==0)
-				write = 1;
-			if (strncmp(&arg[i], "e", 1)==0)
-				execute = 1;
-		}
-		if (add == 1)	//adding permission(s)
-		{
-			//user
-			
-			
-			//group
-			
-			
-			//others
-			
-		}
-		else if (add == 0)	//removing permission(s)
-		{
-			
-		}
-		*/
-//		mip->INODE.i_mode = 33188; //040755 is the same number in octal
-		printf("\nTest (Before):\nmip->INODE.i_mode = %d\n\n", mip->INODE.i_mode);
-		
-		result1 = 0;
-		i = 1;
-		while (mip->INODE.i_mode)	// integer to octal conversion
-		{
-			result1 += (mip->INODE.i_mode % 8) * i;
-			mip->INODE.i_mode /= 8;
-			i *= 10;
-		}
-		printf("intermediate result = %d\n", result1);///////////////////////////////////////////////////////////////////
-		result2 = 0;
-		i = 0;
-		mip->INODE.i_mode = result1;
-		while (mip->INODE.i_mode)	// octal to integer conversion
-		{
-			j = 0;
-			result3 = 1;
-			while (j < i)
-			{
-				result3 *= 8;
-				j++;
-			}
-			result2 += (mip->INODE.i_mode % 10) * result3/*pow(8, i)*/;
-			mip->INODE.i_mode /= 10;
-			i++;
-		}
-		
-//		mip->INODE.i_mode = 33188; //reg file
-//		mip->INODE.i_mode = 16877; //040755 is the same number in octal
-		
-		mip->INODE.i_mode = result2;
-		mip->dirty = 1;
-		
-		printf("\nTest (After):\nmip->INODE.i_mode = %d\n\n", mip->INODE.i_mode);
-		
-		iput(mip);
+		result1 /= 1000;
+		result1 *= 1000;
+		result1 += atoi(arg);
 	}
+	if ((add == 0) || (add == 1))
+	{
+		//alter result1 to reflect the changes made to permissions
+		result1 /= 1000;
+		result1 *= 10;
+		// add user permission octal
+		if (ur == 1 && uw == 1 && ue == 1)
+			result1 += 7;
+		else if (ur == 1 && uw == 1 && ue == 0)
+			result1 += 6;
+		else if (ur == 1 && uw == 0 && ue == 1)
+			result1 += 5;
+		else if (ur == 1 && uw == 0 && ue == 0)
+			result1 += 4;
+		else if (ur == 0 && uw == 1 && ue == 1)
+			result1 += 3;
+		else if (ur == 0 && uw == 1 && ue == 0)
+			result1 += 2;
+		else if (ur == 0 && uw == 0 && ue == 1)
+			result1 += 1;
+		else if (ur == 0 && uw == 0 && ue == 0)
+			result1 += 0;
+		result1 *= 10;
+		// add group permission octal
+		if (gr == 1 && gw == 1 && ge == 1)
+			result1 += 7;
+		else if (gr == 1 && gw == 1 && ge == 0)
+			result1 += 6;
+		else if (gr == 1 && gw == 0 && ge == 1)
+			result1 += 5;
+		else if (gr == 1 && gw == 0 && ge == 0)
+			result1 += 4;
+		else if (gr == 0 && gw == 1 && ge == 1)
+			result1 += 3;
+		else if (gr == 0 && gw == 1 && ge == 0)
+			result1 += 2;
+		else if (gr == 0 && gw == 0 && ge == 1)
+			result1 += 1;
+		else if (gr == 0 && gw == 0 && ge == 0)
+			result1 += 0;
+		result1 *= 10;
+		// add others permission octal
+		if (or == 1 && ow == 1 && oe == 1)
+			result1 += 7;
+		else if (or == 1 && ow == 1 && oe == 0)
+			result1 += 6;
+		else if (or == 1 && ow == 0 && oe == 1)
+			result1 += 5;
+		else if (or == 1 && ow == 0 && oe == 0)
+			result1 += 4;
+		else if (or == 0 && ow == 1 && oe == 1)
+			result1 += 3;
+		else if (or == 0 && ow == 1 && oe == 0)
+			result1 += 2;
+		else if (or == 0 && ow == 0 && oe == 1)
+			result1 += 1;
+		else if (or == 0 && ow == 0 && oe == 0)
+			result1 += 0;
+	}
+
+	//convert octal back to decimal and store it
+printf("intermediate result = %d\n", result1);
+	result2 = 0;
+	i = 0;
+	result3 = 1;
+	mode = result1;
+	while (mode)
+	{
+		if (i != 0)
+			result3 *= 8;
+		result2 += (mode % 10) * result3;
+		mode /= 10;
+		i++;
+	}
+	
+	mip->INODE.i_mode = result2;
+	mip->dirty = 1;
+	
+printf("\nTest (After):\nmip->INODE.i_mode = %d\n\n", mip->INODE.i_mode);
+	
+	iput(mip);
 	
 	return 0;
 }
