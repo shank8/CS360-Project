@@ -389,6 +389,7 @@ void parseString(char *input, char *arg1, char *command, char *pathname)
 	{
 		if ( (strcmp(command, "chmod")==0) || (strcmp(command, "chgrp")==0) || (strcmp(command, "chown")==0) )
 		{
+			
 			strcpy(arg1, token);
 			token = strtok(NULL, " ");
 		}
