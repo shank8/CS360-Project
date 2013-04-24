@@ -380,25 +380,25 @@ void parseString(char *input, char *arg1, char *command, char *pathname)
 	strcpy(command, "");
 	strcpy(arg1, "");
 
-	while(token != NULL)
+	if (token != NULL)
 	{
-		if(count==0)
-		{
-			strcpy(command, token);
-		}
-		else if(count == 1)
-		{
-			strcpy(pathname, token);
-		}
-		else
-		{
-			strcpy(arg1, token);
-		}
-		count++;
+		strcpy(command, token);
 		token = strtok(NULL, " ");
 	}
-	
-	
+	if (token != NULL)
+	{
+		if ( (strcmp(command, "chmod")==0) || (strcmp(command, "chgrp")==0) || (strcmp(command, "chown")==0) )
+		{
+			strcpy(arg1, token);
+			token = strtok(NULL, " ");
+		}
+	}
+	if (token != NULL)
+	{
+		strcpy(pathname, token);
+		token = strtok(NULL, " ");
+	}
+
 	return;
 }
 
