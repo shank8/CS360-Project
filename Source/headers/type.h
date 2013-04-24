@@ -8,8 +8,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <time.h>
-#include <math.h>
-
 
 // define shorter TYPES, save typing efforts
 typedef struct ext2_group_desc	GD;
@@ -34,7 +32,7 @@ typedef struct ext2_dir_entry_2	DIR;    // need this for new version of e2fs
 
 #define DIR_MODE			0x41ED //0040777 
 #define FILE_MODE			0100644
-//#define SYM_MODE			???????
+#define SYM_MODE			0120000
 #define SUPER_MAGIC			0xEF53
 #define SUPER_USER			0
 
@@ -50,8 +48,8 @@ typedef struct ext2_dir_entry_2	DIR;    // need this for new version of e2fs
 #define NFD					10
 #define NOFT				50
 
-#define ROOT_DEV			0
-#define NUM_COMMANDS		14
+#define ROOT_DEV          0
+#define NUM_COMMANDS 17
 
 // Open File Table
 typedef struct Oft{
@@ -104,12 +102,14 @@ extern INODE	*ip;
 extern DIR		*dp;
 extern MINODE	minode[NMINODES];	//<=== 100 minodes; refCount=0 means FREE
 extern MINODE	*root;	//====>   from here on, / means minode[0].
-extern char	device[64], pathname[128], arg1[128];
+extern char	device[64], pathname[128];
 extern char	block[BLOCK_SIZE], datablock[BLOCK_SIZE];
-extern char	name [128][128];
-extern char	completePath[256];
+//extern char	name [128][128];
+extern char completePath[256];
+extern char newfile[256];
+extern char arg1[128];
 
-extern int		fd, n;	// file descriptor, number of names in path
+extern int fd, n;	// file descriptor, number of names in path
 
 extern SUPER	*sb;
 extern GD		*gb;
@@ -124,66 +124,67 @@ extern int		dev;
 // All function declaractions will be here
 
 // Utility
-int				get_block(int dev, int blockNumber, char * buf);
-void			put_block(int dev, int blockNumber, char * buf);
-void			token_path(char *pathname);
-unsigned long	getino(int *dev, char *pathname);
-unsigned long	search(MINODE *mip, char *name);
-MINODE			*iget(int dev, unsigned long ino, char *nodeName);
-void			iput(MINODE *mip);
-int				findmyname(MINODE *parent, unsigned long myino, char *myname);
-int				findino(MINODE *mip, unsigned long *myino, unsigned long *parentino);
-unsigned long	isearch(INODE *inode, char *name);
-INODE			*findInode(int inumber);
-int				quit();
-void			parseString(char *input, char *arg1, char *command, char *pathname);
-int				findCommand(char *command);
-void			printInode(INODE * ip);
-int				do_stat2(char *pathname, struct stat *stPtr);
-
+MINODE *new_MINODE(INODE * inode, unsigned long ino, int minodeLoc, int dev);
+void get_device();
+void init();
+int get_block(int dev, int blockNumber, char * buf);
+void put_block(int dev, int blockNumber, char * buf);
+void token_path(char *pathname);
+unsigned long getino(int *dev, char *pathname);
+unsigned long search(MINODE *mip, char *name);
+unsigned long isearch(INODE *inode, char *name);
+void parseString(char *input, char *command, char *pathname);
+int quit();
+int findCommand(char *command);
+int fileExists(INODE * inode, char * cmpname);
 
 // Functions
-MINODE			*new_MINODE(INODE * inode, unsigned long ino, int minodeLoc, int dev);
-void			get_device();
-void			init();
-void			mount_root();
-void			printDir(unsigned long ino);
-void			compPath(char * path);
+MINODE *iget(int dev, unsigned long ino, char *nodeName);
+void iput(MINODE *mip);
+int findmyname(MINODE *parent, unsigned long myino, char *myname);
+int findino(MINODE *mip, unsigned long *myino, unsigned long *parentino);
+void mount_root();
+void printInode(INODE * ip);
+INODE * findInode(int inumber);
+void compPath(char * path);
 
 
 // Cmds
-int				_menu	(char *arg, char *pathname);
-int				_ls		(char *arg, char *pathname);
-int				_cd		(char *arg, char *pathname);
-int				_mkdir	(char *arg, char *pathname);
-int				_rmdir	(char *arg, char *pathname);
-int				_pwd	(char *arg, char *pathname);
-int				_creat0	(char *arg, char *pathname);
-int				_rm		(char *arg, char *pathname);
-int				_touch	(char *arg, char *pathname);
-int				_chmod	(char *arg, char *pathname);
-int				_chown	(char *arg, char *pathname);
-int				_chgrp	(char *arg, char *pathname);
-int				__exit	(char *arg, char *pathname);
+int  _menu (char *arg, char *pathname);
+int  _ls   (char *arg, char *pathname);
+int  _cd   (char *arg, char *pathname);
+int  _mkdir  (char *arg, char *pathname);
+int  _rmdir  (char *arg, char *pathname);
+int  _pwd  (char *arg, char *pathname);
+int  _creat0 (char *arg, char *pathname);
+int  _rm   (char *arg, char *pathname);
+int  _link (char *arg, char *pathname);
+int  _touch  (char *arg, char *pathname);
+int  _chmod  (char *arg, char *pathname);
+int  _chown  (char *arg, char *pathname);
+int  _chgrp  (char *arg, char *pathname);
+int  __exit  (char *arg, char *pathname);
+
 
 // Helpers to Cmds
-int				_stat(char *arg, char *pathname);
-void			do_stat1(struct stat * mystat, INODE * ino);
-int				rec_pwd(MINODE *wd);
-int				rec_complete(MINODE *wd);
-int				my_mkdir(MINODE *pip, char *name);
+int rec_pwd(MINODE *wd);
+int rec_complete(MINODE *wd);
+int my_mkdir(MINODE *pip, char *name);
+int my_creat(MINODE *pip, char *name);
+void do_stat(struct stat * mystat, INODE * ino, unsigned long inode);
+
 
 // Alloc/Dealloc functions
-unsigned long	ialloc(int dev);
-void			idealloc(int dev, unsigned long ino);
-void			decFreeInodes(int dev);
-void			incFreeInodes(int dev);
+unsigned long ialloc(int dev);
+void idealloc(int dev, unsigned long ino);
+void decFreeInodes(int dev);
+void incFreeInodes(int dev);
 
-unsigned long	balloc(int dev);
-void			bdealloc(int dev, unsigned long ino);
-void			decFreeBlocks(int dev);
-void			incFreeBlocks(int dev);
+unsigned long balloc(int dev);
+void bdealloc(int dev, unsigned long ino);
+void decFreeBlocks(int dev);
+void incFreeBlocks(int dev);
 
-int				tstbit(char *buf, int BIT);
-int				setbit(char *buf, int BIT);
-int				clearbit(char *buf, int BIT);
+int tstbit(char *buf, int BIT);
+int setbit(char *buf, int BIT);
+int clearbit(char *buf, int BIT);
